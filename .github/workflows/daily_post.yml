@@ -1,0 +1,195 @@
+name: たまのためいき。毎日自動投稿
+
+on:
+  schedule:
+    # 毎日21:30 JST (12:30 UTC)
+    - cron: '30 12 * * *'
+  workflow_dispatch:
+    inputs:
+      force_poem:
+        description: '強制指定する詩（空欄でランダム）'
+        required: false
+      force_filter:
+        description: '強制指定するフィルター（空欄でランダム）'
+        required: false
+      dry_run:
+        description: 'ドライラン（投稿せず動画生成のみ）'
+        required: false
+        default: 'false'
+
+jobs:
+  generate_and_post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      # ===== セットアップ =====
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Python セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 依存ライブラリをインストール
+        run: |
+          pip install \
+            numpy pillow \
+            requests \
+            google-auth google-auth-oauthlib google-api-python-client \
+            tweepy \
+            yt-dlp \
+            pyluach \
+            ephem
+
+      - name: フォントをインストール
+        run: |
+          sudo apt-get install -y fonts-noto-cjk
+          fc-cache -fv
+
+      # ===== 当日情報の取得 =====
+      - name: 当日情報を取得
+        id: conditions
+        env:
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+        run: |
+          python3 scripts/get_conditions.py >> $GITHUB_OUTPUT
+
+      # ===== 素材選択 =====
+      - name: 素材を選択
+        id: selection
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          CONDITIONS: ${{ steps.conditions.outputs.conditions_json }}
+          FORCE_POEM: ${{ inputs.force_poem }}
+          FORCE_FILTER: ${{ inputs.force_filter }}
+        run: |
+          python3 scripts/select_assets.py >> $GITHUB_OUTPUT
+
+      # ===== 動画生成 =====
+      - name: 動画を生成
+        id: generate
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SELECTION: ${{ steps.selection.outputs.selection_json }}
+          CONDITIONS: ${{ steps.conditions.outputs.conditions_json }}
+        run: |
+          python3 scripts/run_generate.py >> $GITHUB_OUTPUT
+
+      # ===== キャプション生成 =====
+      - name: SNS別キャプションを生成
+        id: captions
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          POEM: ${{ steps.selection.outputs.poem }}
+          EMOTION_TAGS: ${{ steps.selection.outputs.emotion_tags }}
+          CONDITIONS: ${{ steps.conditions.outputs.conditions_json }}
+        run: |
+          python3 scripts/generate_captions.py >> $GITHUB_OUTPUT
+
+      # ===== 各SNSへ投稿 =====
+      - name: Xに投稿
+        if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
+        id: post_x
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+          VIDEO_PATH: ${{ steps.generate.outputs.video_path }}
+          CAPTION: ${{ steps.captions.outputs.x_caption }}
+        run: |
+          python3 scripts/post_x.py >> $GITHUB_OUTPUT
+
+      - name: YouTubeに投稿
+        if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
+        id: post_youtube
+        env:
+          YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
+          VIDEO_PATH: ${{ steps.generate.outputs.video_path }}
+          THUMBNAIL_PATH: ${{ steps.generate.outputs.thumbnail_path }}
+          CAPTION: ${{ steps.captions.outputs.youtube_caption }}
+          POEM: ${{ steps.selection.outputs.poem }}
+          POST_DATE: ${{ steps.conditions.outputs.date }}
+        run: |
+          python3 scripts/post_youtube.py >> $GITHUB_OUTPUT
+
+      - name: Instagramに投稿
+        if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
+        id: post_instagram
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+          VIDEO_PATH: ${{ steps.generate.outputs.video_path }}
+          CAPTION: ${{ steps.captions.outputs.instagram_caption }}
+        run: |
+          python3 scripts/post_instagram.py >> $GITHUB_OUTPUT
+
+      - name: TikTok用ファイルを準備
+        if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          VIDEO_PATH: ${{ steps.generate.outputs.video_path }}
+          CAPTION: ${{ steps.captions.outputs.tiktok_caption }}
+        run: |
+          python3 scripts/prepare_tiktok.py
+
+      # ===== 静止画生成（翌朝投稿用） =====
+      - name: 静止画を生成
+        if: steps.generate.outputs.success == 'true'
+        env:
+          SELECTION: ${{ steps.selection.outputs.selection_json }}
+        run: |
+          python3 scripts/generate_images.py
+
+      # ===== 投稿履歴を記録 =====
+      - name: 投稿履歴を記録
+        if: always()
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          SELECTION: ${{ steps.selection.outputs.selection_json }}
+          POST_IDS: |
+            {
+              "x": "${{ steps.post_x.outputs.post_id }}",
+              "youtube": "${{ steps.post_youtube.outputs.video_id }}",
+              "instagram": "${{ steps.post_instagram.outputs.media_id }}"
+            }
+        run: |
+          python3 scripts/record_history.py
+
+      # ===== LINE通知 =====
+      - name: 投稿完了通知
+        if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
+        env:
+          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_NOTIFY_TOKEN }}
+          POEM: ${{ steps.selection.outputs.poem }}
+          FILTER: ${{ steps.selection.outputs.filter_name }}
+        run: |
+          python3 scripts/notify_line.py \
+            --type posted \
+            --poem "$POEM" \
+            --filter "$FILTER"
+
+      - name: エラー通知
+        if: failure()
+        env:
+          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_NOTIFY_TOKEN }}
+        run: |
+          python3 scripts/notify_line.py \
+            --type error \
+            --message "投稿に失敗しました。確認してください。"
+
+      # ===== 動画キャッシュ管理 =====
+      - name: 古いキャッシュを削除
+        if: always()
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: |
+          python3 scripts/cleanup_cache.py

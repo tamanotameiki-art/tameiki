@@ -1,0 +1,78 @@
+name: たまのためいき。AIプロデューサー
+
+on:
+  schedule:
+    # 週次レポート：毎週月曜 9:00 JST (0:00 UTC)
+    - cron: '0 0 * * 1'
+    # 月次レポート：毎月1日 10:00 JST (1:00 UTC)
+    - cron: '0 1 1 * *'
+    # 自動ブラッシュアップ：毎日 3:00 JST (18:00 UTC 前日)
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '実行モード'
+        required: true
+        default: 'weekly'
+        type: choice
+        options:
+          - weekly
+          - monthly
+          - brushup
+          - full_analysis
+
+jobs:
+  ai_producer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 依存ライブラリをインストール
+        run: |
+          pip install \
+            requests \
+            google-auth google-api-python-client
+
+      - name: 実行モードを判定
+        id: mode
+        run: |
+          python3 -c "
+          import os
+          from datetime import datetime, timezone, timedelta
+          JST = timezone(timedelta(hours=9))
+          now = datetime.now(JST)
+          forced = '${{ inputs.mode }}'
+          if forced:
+              mode = forced
+          elif now.day == 1:
+              mode = 'monthly'
+          elif now.weekday() == 0:
+              mode = 'weekly'
+          else:
+              mode = 'brushup'
+          print(f'mode={mode}')
+          " >> $GITHUB_OUTPUT
+
+      - name: パフォーマンスデータを収集
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+        run: python3 scripts/producer_collect_stats.py
+
+      - name: AIプロデューサーを実行
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_NOTIFY_TOKEN }}
+          MODE: ${{ steps.mode.outputs.mode }}
+        run: python3 scripts/producer_main.py

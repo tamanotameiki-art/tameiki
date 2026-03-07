@@ -1,0 +1,70 @@
+name: たまのためいき。BGMマスタリング
+
+on:
+  workflow_dispatch:
+    inputs:
+      file_id:
+        description: 'Google Drive ファイルID'
+        required: true
+      file_name:
+        description: 'ファイル名'
+        required: true
+      row:
+        description: 'スプレッドシートの行番号'
+        required: true
+
+jobs:
+  mastering:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 依存ライブラリをインストール
+        run: |
+          sudo apt-get install -y ffmpeg
+          pip install \
+            numpy \
+            librosa soundfile \
+            requests \
+            google-auth google-api-python-client \
+            noisereduce
+
+      - name: BGMをDriveからダウンロード
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          FILE_ID: ${{ inputs.file_id }}
+          FILE_NAME: ${{ inputs.file_name }}
+        run: python3 scripts/bgm_download.py
+
+      - name: 素材タイプを判別・マスタリング実行
+        id: mastering
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          FILE_ID: ${{ inputs.file_id }}
+          FILE_NAME: ${{ inputs.file_name }}
+          SHEET_ROW: ${{ inputs.row }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+        run: python3 scripts/bgm_mastering.py >> $GITHUB_OUTPUT
+
+      - name: フルMVを生成
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          BGM_PATH: ${{ steps.mastering.outputs.mastered_path }}
+          FILE_NAME: ${{ inputs.file_name }}
+        run: python3 scripts/bgm_fullmv.py
+
+      - name: マスタリング完了をLINEに通知
+        env:
+          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_NOTIFY_TOKEN }}
+          FILE_NAME: ${{ inputs.file_name }}
+          PREVIEW_URL: ${{ steps.mastering.outputs.preview_url }}
+        run: |
+          python3 scripts/record_history.py --type bgm_ready \
+            --message "BGM「${{ inputs.file_name }}」のマスタリングが完了しました。\n試聴: ${{ steps.mastering.outputs.preview_url }}\n\nこの曲のタイトルを返信してください。"
