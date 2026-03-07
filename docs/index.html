@@ -557,7 +557,7 @@ const CACHE_KEY  = "tameiki_archive_v2";
 const CACHE_TTL  = 3600 * 1000; // 1時間
 
 // ===== ローディング終了 =====
-window.addEventListener("load", () => {
+document.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
     document.getElementById("loading").classList.add("done");
   }, 800);
