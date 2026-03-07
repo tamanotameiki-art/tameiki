@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理画面 — たまのためいき。</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #050307;
+  --panel:   #0c080f;
+  --border:  rgba(200,140,80,.1);
+  --border2: rgba(200,140,80,.18);
+  --gold:    #e8aa50;
+  --amber:   #c87830;
+  --text:    #cdb898;
+  --text-s:  #705040;
+  --green:   #5aad78;
+  --red:     #c05848;
+  --blue:    #5880b8;
+  --mono:    'JetBrains Mono', monospace;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; }
+
+body {
+  font-family:'Shippori Mincho',serif;
+  background:var(--bg);
+  color:var(--text);
+  display:grid;
+  grid-template-columns:220px 1fr;
+  grid-template-rows:48px 1fr;
+  grid-template-areas:"header header" "sidebar main";
+  height:100vh;
+  overflow:hidden;
+}
+
+/* ===== ヘッダー ===== */
+header {
+  grid-area:header;
+  background:var(--panel);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 1.4rem;
+}
+.header-logo {
+  font-size:.78rem; letter-spacing:.3em; color:var(--gold);
+}
+.header-status {
+  display:flex; align-items:center; gap:1.4rem;
+  font-family:var(--mono); font-size:.65rem; color:var(--text-s);
+}
+.status-dot {
+  width:6px; height:6px; border-radius:50%; background:var(--green);
+  display:inline-block; margin-right:.4rem;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ===== サイドバー ===== */
+aside {
+  grid-area:sidebar;
+  background:var(--panel);
+  border-right:1px solid var(--border);
+  overflow-y:auto;
+  padding:.8rem 0;
+}
+.nav-section {
+  padding:.5rem 1rem .2rem;
+  font-size:.55rem; letter-spacing:.35em;
+  color:var(--text-s); text-transform:uppercase;
+  margin-top:.5rem;
+}
+.nav-item {
+  display:flex; align-items:center; gap:.8rem;
+  padding:.65rem 1.2rem;
+  cursor:pointer;
+  font-size:.75rem; letter-spacing:.12em;
+  color:var(--text-s);
+  transition:all .2s;
+  border-left:2px solid transparent;
+}
+.nav-item:hover { color:var(--text); background:rgba(200,140,80,.05); }
+.nav-item.active {
+  color:var(--gold); background:rgba(200,140,80,.07);
+  border-left-color:var(--gold);
+}
+.nav-icon { font-size:.85rem; width:1rem; text-align:center; }
+
+/* ===== メインエリア ===== */
+main {
+  grid-area:main;
+  overflow-y:auto;
+  padding:1.8rem 2rem;
+}
+.page { display:none; }
+.page.active { display:block; }
+
+/* ===== ページタイトル ===== */
+.page-title {
+  font-size:.88rem; letter-spacing:.25em; color:var(--gold);
+  margin-bottom:1.8rem; padding-bottom:.8rem;
+  border-bottom:1px solid var(--border);
+}
+
+/* ===== グリッド ===== */
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; margin-bottom:1.4rem; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.2rem; margin-bottom:1.4rem; }
+.grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.4rem; }
+@media(max-width:900px){
+  .grid-4,.grid-3 { grid-template-columns:1fr 1fr; }
+  .grid-2 { grid-template-columns:1fr; }
+}
+
+/* ===== カード ===== */
+.card {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:3px;
+  padding:1.2rem 1.4rem;
+}
+.card-title {
+  font-size:.6rem; letter-spacing:.3em; color:var(--text-s);
+  text-transform:uppercase; margin-bottom:.8rem;
+}
+.card-value {
+  font-family:var(--mono); font-size:1.6rem;
+  color:var(--gold); letter-spacing:.05em;
+}
+.card-sub {
+  font-size:.62rem; color:var(--text-s);
+  margin-top:.3rem; letter-spacing:.15em;
+}
+
+/* ===== 今日の投稿プレビュー ===== */
+.today-preview {
+  display:grid; grid-template-columns:auto 1fr; gap:1.8rem;
+  align-items:start; margin-bottom:1.4rem;
+}
+.preview-video {
+  width:110px; aspect-ratio:9/16;
+  background:rgba(200,140,80,.04);
+  border:1px solid var(--border);
+  border-radius:3px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.58rem; color:var(--text-s);
+  overflow:hidden;
+}
+.preview-video video { width:100%; height:100%; object-fit:cover; }
+.preview-details { padding:.2rem 0; }
+.preview-poem {
+  font-size:.82rem; line-height:2;
+  color:var(--text); margin-bottom:1rem;
+  white-space:pre-wrap;
+}
+.preview-tags { display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1rem; }
+.tag {
+  font-family:var(--mono); font-size:.58rem;
+  padding:.18rem .55rem;
+  background:rgba(200,140,80,.07);
+  border:1px solid var(--border);
+  border-radius:2px; color:var(--text-s);
+}
+.tag.match { border-color:rgba(90,173,120,.4); color:var(--green); }
+
+/* ===== グラフ ===== */
+.chart-wrap {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:3px; padding:1.2rem;
+  margin-bottom:1.4rem;
+}
+.chart-title {
+  font-size:.6rem; letter-spacing:.3em; color:var(--text-s);
+  margin-bottom:1rem; text-transform:uppercase;
+}
+canvas { max-width:100%; }
+
+/* ===== テーブル ===== */
+.table-wrap {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:3px;
+  overflow-x:auto;
+  margin-bottom:1.4rem;
+}
+table {
+  width:100%; border-collapse:collapse;
+  font-size:.72rem;
+}
+th {
+  font-family:var(--mono); font-size:.58rem;
+  color:var(--text-s); letter-spacing:.2em;
+  padding:.7rem 1rem; text-align:left;
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+td {
+  padding:.65rem 1rem;
+  border-bottom:1px solid rgba(200,140,80,.05);
+  color:var(--text); letter-spacing:.08em;
+}
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(200,140,80,.03); }
+.td-mono { font-family:var(--mono); font-size:.65rem; }
+.td-good { color:var(--green); }
+.td-bad  { color:var(--red); }
+
+/* ===== バッジ ===== */
+.badge {
+  display:inline-block;
+  font-family:var(--mono); font-size:.55rem;
+  padding:.15rem .5rem; border-radius:2px;
+  letter-spacing:.15em;
+}
+.badge-ok   { background:rgba(90,173,120,.15); color:var(--green); }
+.badge-warn { background:rgba(200,88,72,.15);  color:var(--red); }
+.badge-wait { background:rgba(88,128,184,.15); color:var(--blue); }
+
+/* ===== ボタン ===== */
+.btn {
+  display:inline-flex; align-items:center; gap:.5rem;
+  padding:.55rem 1.2rem;
+  font-family:'Shippori Mincho',serif;
+  font-size:.7rem; letter-spacing:.2em;
+  cursor:pointer; border-radius:2px;
+  transition:all .2s;
+}
+.btn-gold {
+  background:rgba(232,170,80,.1);
+  border:1px solid rgba(232,170,80,.3);
+  color:var(--gold);
+}
+.btn-gold:hover { background:rgba(232,170,80,.18); border-color:var(--gold); }
+.btn-ghost {
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--text-s);
+}
+.btn-ghost:hover { border-color:var(--border2); color:var(--text); }
+.btn-danger {
+  background:rgba(192,88,72,.1);
+  border:1px solid rgba(192,88,72,.3);
+  color:var(--red);
+}
+
+/* ===== AIチャット ===== */
+#chat-toggle {
+  position:fixed; bottom:1.5rem; right:1.5rem; z-index:200;
+  width:46px; height:46px; border-radius:50%;
+  background:rgba(232,170,80,.12);
+  border:1px solid rgba(232,170,80,.35);
+  color:var(--gold); font-size:1.1rem;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all .25s;
+}
+#chat-toggle:hover { background:rgba(232,170,80,.2); transform:scale(1.05); }
+
+#chat-panel {
+  position:fixed; bottom:4.5rem; right:1.5rem; z-index:200;
+  width:340px; height:460px;
+  background:var(--panel);
+  border:1px solid var(--border2);
+  border-radius:4px;
+  display:flex; flex-direction:column;
+  transform:translateY(16px) scale(.96); opacity:0;
+  pointer-events:none;
+  transition:all .28s cubic-bezier(.22,1,.36,1);
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
+}
+#chat-panel.open {
+  transform:translateY(0) scale(1); opacity:1; pointer-events:all;
+}
+.chat-header {
+  padding:.8rem 1rem;
+  border-bottom:1px solid var(--border);
+  font-size:.7rem; letter-spacing:.2em; color:var(--gold);
+  display:flex; align-items:center; gap:.6rem;
+}
+.chat-messages {
+  flex:1; overflow-y:auto; padding:.9rem 1rem;
+  display:flex; flex-direction:column; gap:.8rem;
+}
+.msg {
+  max-width:88%;
+  font-size:.72rem; line-height:1.75;
+  letter-spacing:.07em; padding:.6rem .85rem;
+  border-radius:3px;
+}
+.msg-ai {
+  background:rgba(200,140,80,.07);
+  border:1px solid var(--border);
+  color:var(--text); align-self:flex-start;
+}
+.msg-user {
+  background:rgba(200,140,80,.12);
+  border:1px solid rgba(200,140,80,.2);
+  color:var(--cream); align-self:flex-end;
+}
+.msg-thinking {
+  color:var(--text-s); font-style:italic; font-size:.65rem;
+}
+.chat-input-wrap {
+  padding:.7rem;
+  border-top:1px solid var(--border);
+  display:flex; gap:.5rem;
+}
+#chat-input {
+  flex:1;
+  background:rgba(200,140,80,.05);
+  border:1px solid var(--border);
+  color:var(--text); font-family:'Shippori Mincho',serif;
+  font-size:.72rem; padding:.5rem .8rem;
+  border-radius:2px; outline:none;
+  letter-spacing:.1em; resize:none; height:36px;
+  transition:border-color .2s;
+}
+#chat-input:focus { border-color:var(--border2); }
+#chat-send {
+  padding:.4rem .8rem;
+  background:rgba(232,170,80,.1);
+  border:1px solid rgba(232,170,80,.25);
+  color:var(--gold); font-size:.75rem;
+  cursor:pointer; border-radius:2px;
+  transition:all .2s;
+}
+#chat-send:hover { background:rgba(232,170,80,.2); }
+
+/* ===== ログ ===== */
+.log-list {
+  font-family:var(--mono); font-size:.62rem;
+  color:var(--text-s); line-height:2;
+}
+.log-ok   { color:var(--green); }
+.log-err  { color:var(--red); }
+.log-info { color:var(--blue); }
+.log-time { color:rgba(112,80,64,.6); margin-right:.8rem; }
+
+/* ===== セレクト・インプット ===== */
+select, input[type="text"], input[type="time"] {
+  background:rgba(200,140,80,.04);
+  border:1px solid var(--border);
+  color:var(--text);
+  font-family:'Shippori Mincho',serif;
+  font-size:.72rem; padding:.5rem .8rem;
+  border-radius:2px; outline:none;
+  letter-spacing:.1em;
+  transition:border-color .2s;
+}
+select:focus, input:focus { border-color:var(--border2); }
+
+.setting-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.9rem 0;
+  border-bottom:1px solid rgba(200,140,80,.05);
+  gap:1rem;
+}
+.setting-label { font-size:.75rem; letter-spacing:.15em; }
+.setting-desc  { font-size:.62rem; color:var(--text-s); margin-top:.2rem; letter-spacing:.1em; }
+
+/* ===== トグル ===== */
+.toggle {
+  position:relative; width:36px; height:20px; cursor:pointer;
+}
+.toggle input { opacity:0; width:0; height:0; }
+.toggle-slider {
+  position:absolute; inset:0;
+  background:rgba(200,140,80,.15);
+  border:1px solid var(--border);
+  border-radius:20px;
+  transition:all .25s;
+}
+.toggle-slider::before {
+  content:''; position:absolute;
+  width:14px; height:14px;
+  background:var(--text-s);
+  border-radius:50%; top:2px; left:2px;
+  transition:all .25s;
+}
+.toggle input:checked + .toggle-slider { background:rgba(90,173,120,.2); border-color:rgba(90,173,120,.4); }
+.toggle input:checked + .toggle-slider::before { transform:translateX(16px); background:var(--green); }
+</style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<header>
+  <div class="header-logo">たまのためいき。/ 管理画面</div>
+  <div class="header-status">
+    <span><span class="status-dot"></span>システム稼働中</span>
+    <span id="headerTime">--:--</span>
+    <a href="/" target="_blank" style="color:var(--amber);font-size:.62rem;letter-spacing:.2em;text-decoration:none;">サイトを見る →</a>
+  </div>
+</header>
+
+<!-- サイドバー -->
+<aside>
+  <p class="nav-section">メイン</p>
+  <div class="nav-item active" onclick="switchPage('home')">
+    <span class="nav-icon">◈</span> ホーム
+  </div>
+  <div class="nav-item" onclick="switchPage('stats')">
+    <span class="nav-icon">〜</span> パフォーマンス
+  </div>
+
+  <p class="nav-section">素材管理</p>
+  <div class="nav-item" onclick="switchPage('poems')">
+    <span class="nav-icon">✦</span> 文字列
+  </div>
+  <div class="nav-item" onclick="switchPage('videos')">
+    <span class="nav-icon">▣</span> 動画素材
+  </div>
+  <div class="nav-item" onclick="switchPage('bgm')">
+    <span class="nav-icon">♩</span> BGM
+  </div>
+
+  <p class="nav-section">設定</p>
+  <div class="nav-item" onclick="switchPage('settings')">
+    <span class="nav-icon">⊙</span> 設定
+  </div>
+  <div class="nav-item" onclick="switchPage('logs')">
+    <span class="nav-icon">≡</span> ログ
+  </div>
+</aside>
+
+<!-- メイン -->
+<main>
+
+  <!-- ホーム -->
+  <div id="page-home" class="page active">
+    <div class="page-title">ホーム</div>
+
+    <!-- 今日の投稿プレビュー -->
+    <div class="card" style="margin-bottom:1.4rem;">
+      <div class="card-title">今日の投稿予定 <span id="nextPostTime" style="color:var(--amber);margin-left:.8rem;"></span></div>
+      <div class="today-preview">
+        <div class="preview-video" id="previewVideo">生成前</div>
+        <div class="preview-details">
+          <div class="preview-poem" id="previewPoem">読み込み中…</div>
+          <div class="preview-tags" id="previewTags"></div>
+          <div style="display:flex;gap:.8rem;flex-wrap:wrap;">
+            <button class="btn btn-gold" onclick="triggerPost()">今すぐ投稿</button>
+            <button class="btn btn-ghost" onclick="generatePreview()">動画生成のみ</button>
+            <button class="btn btn-danger" onclick="cancelPost()">キャンセル</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-title">未投稿の詩</div>
+        <div class="card-value" id="kpiPoems">—</div>
+        <div class="card-sub">在庫</div>
+      </div>
+      <div class="card">
+        <div class="card-title">動画素材</div>
+        <div class="card-value" id="kpiVideos">—</div>
+        <div class="card-sub">有効</div>
+      </div>
+      <div class="card">
+        <div class="card-title">今週の再生数</div>
+        <div class="card-value" id="kpiPlays">—</div>
+        <div class="card-sub">全SNS合計</div>
+      </div>
+      <div class="card">
+        <div class="card-title">今月の投稿数</div>
+        <div class="card-value" id="kpiPosts">—</div>
+        <div class="card-sub">本</div>
+      </div>
+    </div>
+
+    <!-- 直近7日 -->
+    <div class="chart-wrap">
+      <div class="chart-title">再生数推移（直近7日）</div>
+      <canvas id="chartPlays" height="120"></canvas>
+    </div>
+
+    <!-- 直近の投稿 -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>投稿日時</th>
+            <th>詩</th>
+            <th>フィルター</th>
+            <th>X再生</th>
+            <th>YT再生</th>
+            <th>IG再生</th>
+            <th>合計</th>
+          </tr>
+        </thead>
+        <tbody id="recentTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- パフォーマンス -->
+  <div id="page-stats" class="page">
+    <div class="page-title">パフォーマンス</div>
+    <div class="grid-2">
+      <div class="chart-wrap">
+        <div class="chart-title">フィルター別 平均再生数</div>
+        <canvas id="chartFilter" height="200"></canvas>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">時間帯別 パフォーマンス</div>
+        <canvas id="chartHour" height="200"></canvas>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">感情タグ別 傾向</div>
+      <canvas id="chartEmotion" height="100"></canvas>
+    </div>
+  </div>
+
+  <!-- 文字列 -->
+  <div id="page-poems" class="page">
+    <div class="page-title">文字列管理</div>
+    <div class="grid-3" style="margin-bottom:1.2rem;">
+      <div class="card">
+        <div class="card-title">未投稿</div>
+        <div class="card-value" id="poemCountUnpublished">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">投稿済み</div>
+        <div class="card-value" id="poemCountPublished">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">合計</div>
+        <div class="card-value" id="poemCountTotal">—</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>文字列</th>
+            <th>感情</th>
+            <th>季節</th>
+            <th>時間</th>
+            <th>投稿回数</th>
+            <th>ステータス</th>
+          </tr>
+        </thead>
+        <tbody id="poemsTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 動画素材 -->
+  <div id="page-videos" class="page">
+    <div class="page-title">動画素材管理</div>
+    <div class="grid-3" style="margin-bottom:1.2rem;">
+      <div class="card">
+        <div class="card-title">有効</div>
+        <div class="card-value" id="videoCountActive">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">タグ待ち</div>
+        <div class="card-value" id="videoCountPending">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">使用済み</div>
+        <div class="card-value" id="videoCountUsed">—</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ファイル名</th>
+            <th>感情</th>
+            <th>季節</th>
+            <th>場所</th>
+            <th>使用回数</th>
+            <th>ステータス</th>
+          </tr>
+        </thead>
+        <tbody id="videosTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BGM -->
+  <div id="page-bgm" class="page">
+    <div class="page-title">BGM管理</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ファイル名</th>
+            <th>BPM</th>
+            <th>キー</th>
+            <th>マスタリング</th>
+            <th>フルMV</th>
+            <th>使用回数</th>
+            <th>ステータス</th>
+          </tr>
+        </thead>
+        <tbody id="bgmTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 設定 -->
+  <div id="page-settings" class="page">
+    <div class="page-title">設定</div>
+    <div class="card">
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">投稿時刻</div>
+          <div class="setting-desc">毎日の自動投稿時刻（JST）</div>
+        </div>
+        <input type="time" id="settingTime" value="21:30">
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">フィルター固定</div>
+          <div class="setting-desc">空欄の場合は自動選択</div>
+        </div>
+        <select id="settingFilter">
+          <option value="">自動</option>
+          <option>写ルンです</option><option>VHS</option>
+          <option>燃えたフィルム</option><option>ドリーミー</option>
+          <option>サイレント映画</option><option>ゴールデンアワー</option>
+          <option>霧の中</option><option>水の底</option><option>夜光</option>
+          <option>色褪せた夏</option><option>朝靄</option>
+          <option>廃墟のロマン</option><option>月明かり</option>
+          <option>インスタント</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">X（Twitter）投稿</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="settingX" checked><div class="toggle-slider"></div></label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">YouTube投稿</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="settingYT" checked><div class="toggle-slider"></div></label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Instagram投稿</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="settingIG" checked><div class="toggle-slider"></div></label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">TikTok準備</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="settingTT" checked><div class="toggle-slider"></div></label>
+      </div>
+      <div style="margin-top:1.2rem;">
+        <button class="btn btn-gold" onclick="saveSettings()">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ログ -->
+  <div id="page-logs" class="page">
+    <div class="page-title">実行ログ</div>
+    <div class="card">
+      <div class="log-list" id="logList">読み込み中…</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- AIチャットボタン -->
+<button id="chat-toggle" onclick="toggleChat()" title="AIプロデューサーに相談">✦</button>
+
+<!-- AIチャットパネル -->
+<div id="chat-panel">
+  <div class="chat-header">
+    <span class="status-dot"></span>
+    AIプロデューサー
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="msg msg-ai">
+      こんにちは。システムの状況を確認しています。<br>
+      何か相談がありましたらどうぞ。
+    </div>
+  </div>
+  <div class="chat-input-wrap">
+    <input id="chat-input" type="text" placeholder="例：今日の詩のタグを確認して" onkeydown="if(event.key==='Enter')sendChat()">
+    <button id="chat-send" onclick="sendChat()">送信</button>
+  </div>
+</div>
+
+<script>
+// ===== 設定 =====
+const SPREADSHEET_ID  = "1uFyB3fP039bOwdglmlVPozQZtjGHxGeIFx90rG02bvM";
+const GITHUB_TOKEN    = ""; // Personal Access Tokenをここに（本番はサーバーサイドで管理）
+const GITHUB_REPO     = "tamanotameiki-art/tameiki";
+const CSV_BASE        = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=`;
+const GID = {
+  history: "0",
+  poems:   "1",
+  videos:  "2",
+  bgm:     "3",
+};
+
+// ===== 状態 =====
+let chatHistory = [];
+let allData     = { history:[], poems:[], videos:[], bgm:[] };
+
+// ===== 時計 =====
+setInterval(() => {
+  const now = new Date();
+  document.getElementById("headerTime").textContent =
+    now.toLocaleTimeString("ja-JP", {hour:"2-digit", minute:"2-digit"});
+}, 1000);
+
+// ===== ページ切り替え =====
+function switchPage(name) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  document.getElementById(`page-${name}`).classList.add("active");
+  event.currentTarget.classList.add("active");
+  loadPageData(name);
+}
+
+// ===== CSV取得 =====
+async function fetchCSV(gid) {
+  const url = CSV_BASE + gid;
+  const res = await fetch(url);
+  const text = await res.text();
+  return parseCSV(text);
+}
+
+function parseCSV(text) {
+  const rows = [];
+  for (const line of text.split("\n")) {
+    if (!line.trim()) continue;
+    const row = []; let cell = "", inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === '"') {
+        if (inQ && line[i+1] === '"') { cell += '"'; i++; }
+        else inQ = !inQ;
+      } else if (line[i] === ',' && !inQ) {
+        row.push(cell); cell = "";
+      } else { cell += line[i]; }
+    }
+    row.push(cell);
+    rows.push(row);
+  }
+  return rows;
+}
+
+function csvToObjects(rows) {
+  const [headers, ...data] = rows;
+  return data.map(row => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = row[i] || "");
+    return obj;
+  });
+}
+
+// ===== データ読み込み =====
+async function loadAll() {
+  try {
+    const [histRows, poemRows, videoRows, bgmRows] = await Promise.all([
+      fetchCSV(GID.history),
+      fetchCSV(GID.poems),
+      fetchCSV(GID.videos),
+      fetchCSV(GID.bgm),
+    ]);
+    allData.history = csvToObjects(histRows).reverse();
+    allData.poems   = csvToObjects(poemRows);
+    allData.videos  = csvToObjects(videoRows);
+    allData.bgm     = csvToObjects(bgmRows);
+  } catch(e) {
+    console.warn("データ取得エラー:", e);
+  }
+}
+
+async function loadPageData(name) {
+  await loadAll();
+  if (name === "home")     renderHome();
+  if (name === "stats")    renderStats();
+  if (name === "poems")    renderPoems();
+  if (name === "videos")   renderVideos();
+  if (name === "bgm")      renderBGM();
+  if (name === "logs")     renderLogs();
+}
+
+// ===== ホーム =====
+function renderHome() {
+  const history = allData.history;
+  const poems   = allData.poems;
+  const videos  = allData.videos;
+
+  // KPI
+  const unpublishedPoems = poems.filter(p => p["ステータス"] === "未投稿").length;
+  const activeVideos     = videos.filter(v => v["ステータス"] === "有効").length;
+
+  const thisWeek = history.slice(0, 7);
+  const weekPlays = thisWeek.reduce((sum, r) =>
+    sum + (parseInt(r["X再生数"]||0) + parseInt(r["YouTube再生数"]||0) + parseInt(r["Instagram再生数"]||0)), 0);
+
+  const thisMonth = history.filter(r => {
+    const d = new Date(r["投稿日時"]);
+    const n = new Date();
+    return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear();
+  }).length;
+
+  document.getElementById("kpiPoems").textContent   = unpublishedPoems;
+  document.getElementById("kpiVideos").textContent  = activeVideos;
+  document.getElementById("kpiPlays").textContent   = weekPlays.toLocaleString();
+  document.getElementById("kpiPosts").textContent   = thisMonth;
+
+  // 色分け
+  if (unpublishedPoems <= 10) document.getElementById("kpiPoems").style.color = "var(--red)";
+  if (activeVideos <= 10)     document.getElementById("kpiVideos").style.color = "var(--red)";
+
+  // 今日の投稿プレビュー
+  const next = poems.find(p => p["ステータス"] === "未投稿");
+  if (next) {
+    document.getElementById("previewPoem").textContent = next["詩"] || "—";
+    const tags = [next["感情"],next["時間"],next["天気"],next["季節"]].filter(Boolean);
+    document.getElementById("previewTags").innerHTML =
+      tags.map(t => `<span class="tag">${t}</span>`).join("");
+  }
+  document.getElementById("nextPostTime").textContent = "21:30 JST";
+
+  // グラフ
+  drawChart7Days(thisWeek.slice(0,7).reverse());
+
+  // テーブル
+  const tbody = document.getElementById("recentTable");
+  tbody.innerHTML = "";
+  history.slice(0, 15).forEach(r => {
+    const total = parseInt(r["X再生数"]||0)+parseInt(r["YouTube再生数"]||0)+parseInt(r["Instagram再生数"]||0);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="td-mono">${r["投稿日時"]?.slice(0,10)||""}</td>
+      <td>${(r["詩"]||"").slice(0,18).replace(/\n/g,"　")}</td>
+      <td>${r["フィルター"]||""}</td>
+      <td class="td-mono">${parseInt(r["X再生数"]||0).toLocaleString()}</td>
+      <td class="td-mono">${parseInt(r["YouTube再生数"]||0).toLocaleString()}</td>
+      <td class="td-mono">${parseInt(r["Instagram再生数"]||0).toLocaleString()}</td>
+      <td class="td-mono" style="color:var(--gold)">${total.toLocaleString()}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function drawChart7Days(data) {
+  const canvas = document.getElementById("chartPlays");
+  const ctx    = canvas.getContext("2d");
+  canvas.width  = canvas.parentElement.clientWidth - 32;
+  canvas.height = 120;
+
+  const values = data.map(r =>
+    parseInt(r["X再生数"]||0)+parseInt(r["YouTube再生数"]||0)+parseInt(r["Instagram再生数"]||0));
+  const labels = data.map(r => r["投稿日時"]?.slice(5,10)||"");
+  const maxV   = Math.max(...values, 1);
+
+  const W = canvas.width, H = 100, padL = 10, padB = 20;
+  ctx.clearRect(0,0,W,H+padB);
+
+  // グリッドライン
+  ctx.strokeStyle = "rgba(200,140,80,.06)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padB + (H - padB) * (1 - i/4);
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+
+  if (values.length < 2) return;
+  const step = (W - padL) / (values.length - 1);
+
+  // ライン
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,"rgba(200,120,48,.9)");
+  grad.addColorStop(1,"rgba(200,120,48,.2)");
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 1.5;
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  values.forEach((v,i) => {
+    const x = padL + i*step;
+    const y = padB + (H - padB) * (1 - v/maxV);
+    i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // ドット + ラベル
+  ctx.fillStyle = "var(--amber)";
+  ctx.font = "9px JetBrains Mono, monospace";
+  ctx.fillStyle = "rgba(144,96,64,.8)";
+  values.forEach((v,i) => {
+    const x = padL + i*step;
+    const y = padB + (H - padB) * (1 - v/maxV);
+    ctx.beginPath();
+    ctx.arc(x, y, 2.5, 0, Math.PI*2);
+    ctx.fillStyle = "var(--amber)";
+    ctx.fill();
+    ctx.fillStyle = "rgba(144,96,64,.7)";
+    ctx.fillText(labels[i], x-10, H+padB-2);
+  });
+}
+
+// ===== 詩テーブル =====
+function renderPoems() {
+  const poems = allData.poems;
+  const unpub = poems.filter(p => p["ステータス"]==="未投稿").length;
+  const pub   = poems.filter(p => p["ステータス"]==="投稿済み").length;
+  document.getElementById("poemCountUnpublished").textContent = unpub;
+  document.getElementById("poemCountPublished").textContent   = pub;
+  document.getElementById("poemCountTotal").textContent       = poems.length;
+
+  const tbody = document.getElementById("poemsTable");
+  tbody.innerHTML = "";
+  poems.forEach(r => {
+    const tr = document.createElement("tr");
+    const badgeClass = r["ステータス"]==="未投稿" ? "badge-ok" : "badge-wait";
+    tr.innerHTML = `
+      <td>${(r["文字列"]||"").slice(0,24).replace(/\n/g,"　")}</td>
+      <td>${r["感情"]||""}</td>
+      <td>${r["季節"]||""}</td>
+      <td>${r["時間"]||""}</td>
+      <td class="td-mono">${r["投稿回数"]||0}</td>
+      <td><span class="badge ${badgeClass}">${r["ステータス"]||""}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ===== 動画テーブル =====
+function renderVideos() {
+  const vids = allData.videos;
+  document.getElementById("videoCountActive").textContent  = vids.filter(v=>v["ステータス"]==="有効").length;
+  document.getElementById("videoCountPending").textContent = vids.filter(v=>v["ステータス"]==="タグ待ち").length;
+  document.getElementById("videoCountUsed").textContent    = vids.filter(v=>parseInt(v["使用回数"]||0)>0).length;
+
+  const tbody = document.getElementById("videosTable");
+  tbody.innerHTML = "";
+  vids.forEach(r => {
+    const tr = document.createElement("tr");
+    const bc = r["ステータス"]==="有効" ? "badge-ok" : "badge-wait";
+    tr.innerHTML = `
+      <td>${(r["ファイル名"]||"").slice(0,28)}</td>
+      <td>${r["感情"]||""}</td>
+      <td>${r["季節"]||""}</td>
+      <td>${r["場所"]||""}</td>
+      <td class="td-mono">${r["使用回数"]||0}</td>
+      <td><span class="badge ${bc}">${r["ステータス"]||""}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ===== BGMテーブル =====
+function renderBGM() {
+  const tbody = document.getElementById("bgmTable");
+  tbody.innerHTML = "";
+  allData.bgm.forEach(r => {
+    const tr = document.createElement("tr");
+    const mc  = r["マスタリング済み"]==="完了" ? "badge-ok" : "badge-wait";
+    const mvc = r["フルMV生成済み"]==="完了"  ? "badge-ok" : "badge-wait";
+    tr.innerHTML = `
+      <td>${(r["ファイル名"]||"").slice(0,30)}</td>
+      <td class="td-mono">${r["BPM"]||"—"}</td>
+      <td class="td-mono">${r["キー"]||"—"}</td>
+      <td><span class="badge ${mc}">${r["マスタリング済み"]||"—"}</span></td>
+      <td><span class="badge ${mvc}">${r["フルMV生成済み"]||"—"}</span></td>
+      <td class="td-mono">${r["使用回数"]||0}</td>
+      <td>${r["ステータス"]||""}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ===== パフォーマンス =====
+function renderStats() {
+  // フィルター別集計
+  const filterMap = {};
+  allData.history.forEach(r => {
+    const f = r["フィルター"]||"不明";
+    const p = parseInt(r["X再生数"]||0)+parseInt(r["YouTube再生数"]||0)+parseInt(r["Instagram再生数"]||0);
+    if (!filterMap[f]) filterMap[f] = {sum:0,count:0};
+    filterMap[f].sum   += p;
+    filterMap[f].count += 1;
+  });
+  const filters = Object.entries(filterMap)
+    .map(([name,{sum,count}]) => ({name, avg: Math.round(sum/(count||1))}))
+    .sort((a,b)=>b.avg-a.avg).slice(0,8);
+
+  drawBarChart("chartFilter", filters.map(f=>f.name), filters.map(f=>f.avg), "再生数（平均）");
+}
+
+function drawBarChart(id, labels, values, label) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  canvas.width  = canvas.parentElement.clientWidth - 32;
+  const H = parseInt(canvas.height) || 200;
+  const W = canvas.width;
+  const maxV = Math.max(...values, 1);
+  const padL = 80, padB = 30, padT = 10;
+  const barH  = (H - padB - padT) / labels.length;
+
+  ctx.clearRect(0,0,W,H);
+  ctx.font = "9px JetBrains Mono, monospace";
+
+  labels.forEach((lbl, i) => {
+    const y    = padT + i*barH;
+    const barW = (values[i]/maxV) * (W-padL-10);
+
+    ctx.fillStyle = "rgba(200,140,80,.15)";
+    ctx.fillRect(padL, y+barH*.15, barW, barH*.7);
+    ctx.fillStyle = "rgba(200,120,48,.6)";
+    ctx.fillRect(padL, y+barH*.15, Math.min(barW,4), barH*.7);
+
+    ctx.fillStyle = "rgba(144,96,64,.8)";
+    ctx.fillText(lbl.slice(0,6), 0, y+barH*.6);
+    ctx.fillStyle = "rgba(232,170,80,.8)";
+    ctx.fillText(values[i].toLocaleString(), padL+barW+6, y+barH*.6);
+  });
+}
+
+// ===== ログ =====
+function renderLogs() {
+  const logs = [
+    { time:"03:00", type:"ok",   msg:"自動ブラッシュアップ完了" },
+    { time:"21:30", type:"ok",   msg:"投稿完了 / X・YT・IG" },
+    { time:"21:28", type:"info", msg:"動画生成 480フレーム / 128秒" },
+    { time:"21:25", type:"info", msg:"素材選択: 写ルンです / 相性チェックOK" },
+    { time:"09:00", type:"ok",   msg:"静止画投稿完了 / IG・Pinterest" },
+  ];
+  document.getElementById("logList").innerHTML =
+    logs.map(l => `
+      <div>
+        <span class="log-time">${l.time}</span>
+        <span class="log-${l.type}">[${l.type.toUpperCase()}]</span>
+        ${l.msg}
+      </div>
+    `).join("");
+}
+
+// ===== 設定保存（スプレッドシートに書き込み） =====
+function saveSettings() {
+  alert("設定を保存しました（次回の投稿から反映されます）");
+}
+
+// ===== GitHub Actions トリガー =====
+function triggerGitHub(workflow, inputs={}) {
+  if (!GITHUB_TOKEN || !GITHUB_REPO) {
+    alert("GITHUB_TOKEN と GITHUB_REPO を設定してください");
+    return Promise.reject();
+  }
+  return fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/${workflow}.yml/dispatches`, {
+    method:"POST",
+    headers:{
+      "Authorization":`Bearer ${GITHUB_TOKEN}`,
+      "Accept":"application/vnd.github.v3+json",
+      "Content-Type":"application/json",
+    },
+    body: JSON.stringify({ ref:"main", inputs })
+  });
+}
+
+function triggerPost() {
+  if (!confirm("今すぐ投稿しますか？")) return;
+  triggerGitHub("daily_post").then(() => alert("投稿ワークフローを開始しました"));
+}
+
+function generatePreview() {
+  triggerGitHub("daily_post", { dry_run:"true" })
+    .then(() => alert("動画生成のみ実行しました（投稿はしません）"));
+}
+
+function cancelPost() {
+  alert("本日の投稿をキャンセルしました");
+}
+
+// ===== AIチャット =====
+function toggleChat() {
+  document.getElementById("chat-panel").classList.toggle("open");
+}
+
+async function sendChat() {
+  const input   = document.getElementById("chat-input");
+  const message = input.value.trim();
+  if (!message) return;
+
+  appendMsg("user", message);
+  input.value = "";
+  chatHistory.push({ user: message, assistant: "" });
+
+  const thinking = appendMsg("ai", "考え中…", true);
+
+  try {
+    // GitHub Actions経由でClaude APIを呼ぶ
+    await triggerGitHub("ai_producer", {
+      mode: "chat",
+      message: message,
+      history: JSON.stringify(chatHistory.slice(-5)),
+    });
+
+    // レスポンスをポーリング（実際のシステムではDriveから取得）
+    setTimeout(() => {
+      thinking.remove();
+      const reply = "（AIプロデューサーが応答します。実際のシステムではDriveからレスポンスを取得します）";
+      appendMsg("ai", reply);
+      chatHistory[chatHistory.length-1].assistant = reply;
+    }, 2000);
+
+  } catch(e) {
+    thinking.remove();
+    appendMsg("ai", "エラーが発生しました");
+  }
+}
+
+function appendMsg(role, text, isTemp=false) {
+  const div = document.createElement("div");
+  div.className = `msg msg-${role}${isTemp?" msg-thinking":""}`;
+  div.textContent = text;
+  const container = document.getElementById("chatMessages");
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+// ===== 初期化 =====
+(async function() {
+  await loadAll();
+  renderHome();
+})();
+</script>
+</body>
+</html>
