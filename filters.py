@@ -149,9 +149,10 @@ def apply_halation(img, strength=0.12, fi=0):
         return img
     actual = strength * (1.0 + random_jitter(fi, 0.15, seed=44))
     arr = np.array(img).astype(np.float32)
+    h, w = arr.shape[:2]
     bright_r = np.clip(arr[:, :, 0] - 160, 0, 95) / 95.0
-    small    = Image.fromarray((bright_r * 255).astype(np.uint8)).resize((W//4, H//4), Image.BILINEAR)
-    halo     = small.filter(ImageFilter.GaussianBlur(radius=8)).resize((W, H), Image.BILINEAR)
+    small    = Image.fromarray((bright_r * 255).astype(np.uint8)).resize((w//4, h//4), Image.BILINEAR)
+    halo     = small.filter(ImageFilter.GaussianBlur(radius=8)).resize((w, h), Image.BILINEAR)
     halo_arr = np.array(halo).astype(np.float32) / 255.0
     result = arr.copy()
     result[:, :, 0] = np.clip(arr[:, :, 0] + halo_arr * actual * 60, 0, 255)
