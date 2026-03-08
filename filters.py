@@ -274,9 +274,9 @@ def apply_ripple(img, fi=0, strength=2.0):
     """水面の揺らぎ：画像をわずかに波状に歪める。"""
     arr = np.array(img)
     result = arr.copy()
-
     phase = fi * 0.08
-    for y in range(H):
+    h, w = arr.shape[:2]
+    for y in range(h):
         shift = int(math.sin(y * 0.03 + phase) * strength)
         if shift > 0:
             result[y, shift:, :] = arr[y, :-shift, :]
@@ -285,7 +285,6 @@ def apply_ripple(img, fi=0, strength=2.0):
             s = -shift
             result[y, :-s, :] = arr[y, s:, :]
             result[y, -s:, :] = arr[y, -1:, :]
-
     return Image.fromarray(result)
 
 
