@@ -47,7 +47,7 @@ def main():
     extract_thumbnail(output_path, thumbnail_path, poem)
 
     # DriveにアップロードしてURLを取得
-    video_url = upload_to_drive(output_path, f"tameiki_{conditions.get('date','')}.mp4")
+    video_url = output_path
 
     print(f"success=true")
     print(f"video_path={output_path}")
