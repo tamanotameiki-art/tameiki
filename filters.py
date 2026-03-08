@@ -42,7 +42,17 @@ def make_vignette(strength=190, seed=0):
 
 def apply_vignette(img_arr, strength=190, dark=(8, 5, 3), seed=0):
     """ビネットを画像配列に適用"""
-    vign = make_vignette(strength, seed)
+    h, w = img_arr.shape[:2]
+    cx = w / 2 + random_jitter(seed, 12, seed=1)
+    cy = h / 2 + random_jitter(seed, 20, seed=2)
+    rx = w / 2 * (0.93 + random_jitter(seed, 0.04, seed=3))
+    ry = h / 2 * (0.91 + random_jitter(seed, 0.04, seed=4))
+    xs = (np.arange(w, dtype=np.float32) - cx) / rx
+    ys = (np.arange(h, dtype=np.float32) - cy) / ry
+    xx, yy = np.meshgrid(xs, ys)
+    d   = np.sqrt(xx * xx + yy * yy)
+    arr = np.clip((d - 0.40) / 0.85, 0.0, 1.0)
+    vign = (arr * strength).astype(np.uint8)
     v = vign[:, :, np.newaxis] / 255.0
     dark_arr = np.array(dark, dtype=np.float32)
     result = img_arr * (1 - v) + dark_arr * v
