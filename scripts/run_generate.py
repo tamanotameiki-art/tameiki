@@ -127,18 +127,9 @@ def upload_to_drive(file_path, file_name):
     )
     drive = build("drive", "v3", credentials=creds)
 
-    # キャッシュフォルダに保存
-    folders = drive.files().list(
-        q="name='tameiki_cache' and mimeType='application/vnd.google-apps.folder'",
-        fields="files(id)"
-    ).execute().get("files", [])
-
-    folder_id = folders[0]["id"] if folders else None
-
-    metadata = {"name": file_name}
-    if folder_id:
-        metadata["parents"] = [folder_id]
-
+    # キャッシュフォルダに保存（フォルダID直接指定）
+    folder_id = "1tNvlWRtS7wothPyI693YBuR6CQjEXG8i"
+    metadata = {"name": file_name, "parents": [folder_id]}
     media = MediaFileUpload(file_path, mimetype="video/mp4", resumable=True)
     file = drive.files().create(
         body=metadata,
