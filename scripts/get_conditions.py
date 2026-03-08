@@ -148,6 +148,6 @@ print(f"season={conditions['season']}")
 print(f"moon_phase={conditions['moon_phase']}")
 
 # デバッグ出力
-print(f"\n--- 本日の条件 ---", flush=True)
+print(f"--- 本日の条件 ---", flush=True)
 for k, v in conditions.items():
     print(f"  {k}: {v}", flush=True)
