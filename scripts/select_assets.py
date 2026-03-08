@@ -315,7 +315,7 @@ def main():
 
     # 最大3回リトライ
     for attempt in range(3):
-        print(f"\n--- 素材選択 試行 {attempt + 1}/3 ---", flush=True)
+        print(f"素材選択 試行 {attempt + 1}/3", flush=True)
 
         # 詩を選択
         if force_poem:
