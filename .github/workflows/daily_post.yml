@@ -68,7 +68,8 @@ jobs:
           FORCE_POEM: ${{ inputs.force_poem }}
           FORCE_FILTER: ${{ inputs.force_filter }}
         run: |
-          python3 scripts/select_assets.py >> $GITHUB_OUTPUT
+          python3 scripts/select_assets.py 2>&1 | tee /tmp/selection_log.txt
+          grep "^[a-zA-Z_]*=" /tmp/selection_log.txt >> $GITHUB_OUTPUT
 
       # ===== 動画生成 =====
       - name: 動画を生成
