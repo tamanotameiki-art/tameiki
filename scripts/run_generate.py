@@ -30,7 +30,9 @@ def main():
 
     print(f"動画生成開始: {filter_name} / {emotion_tags}", flush=True)
 
-    from tameiki.generate import generate
+ import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from generate import generate
     success = generate(
         text          = poem,
         bg_path       = bg_path,
@@ -100,7 +102,7 @@ def extract_thumbnail(video_path, thumb_path, poem):
     サムネイル抽出：1行目の最後の文字が表示された瞬間のフレーム
     TEXT_DELAY + (1行目の文字数 * CHAR_INTERVAL) 秒地点
     """
-    from tameiki.config import TEXT_DELAY, CHAR_INTERVAL
+    from config import TEXT_DELAY, CHAR_INTERVAL
 
     first_line = poem.split("\n")[0]
     t = TEXT_DELAY + len(first_line) * CHAR_INTERVAL + 0.5  # 少し余裕
