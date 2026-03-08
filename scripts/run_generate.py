@@ -24,15 +24,13 @@ def main():
     # 動画素材をDriveからダウンロード
     bg_path = download_video_asset(video_id)
 
-    # 動画生成
+ # 動画生成
     output_path   = "/tmp/tameiki_output.mp4"
     thumbnail_path = "/tmp/tameiki_thumb.jpg"
-
     print(f"動画生成開始: {filter_name} / {emotion_tags}", flush=True)
-
- import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from generate import generate
+    import sys, os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from generate import generate
     success = generate(
         text          = poem,
         bg_path       = bg_path,
@@ -42,7 +40,6 @@ from generate import generate
         frames_dir    = "/tmp/tameiki_frames",
         seed          = hash(poem + filter_name) % 10000,
     )
-
     if not success:
         print("動画生成失敗", flush=True)
         print("success=false")
