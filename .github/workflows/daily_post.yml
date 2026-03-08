@@ -49,6 +49,10 @@ jobs:
           sudo apt-get install -y fonts-noto-cjk
           fc-cache -fv
 
+      - name: ffmpegをインストール
+        run: |
+          sudo apt-get install -y ffmpeg
+
       # ===== 当日情報の取得 =====
       - name: 当日情報を取得
         id: conditions
