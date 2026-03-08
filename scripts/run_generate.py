@@ -28,8 +28,6 @@ def main():
     output_path   = "/tmp/tameiki_output.mp4"
     thumbnail_path = "/tmp/tameiki_thumb.jpg"
     print(f"動画生成開始: {filter_name} / {emotion_tags}", flush=True)
-    import sys, os
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from generate import generate
     success = generate(
         text          = poem,
