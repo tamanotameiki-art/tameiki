@@ -207,9 +207,8 @@ def select_filter(poem_tags, video_tags=None, used_filters=None):
         return scored[0]["name"]
     if scored:
         return random.choice(scored[:min(3, len(scored))])["name"]
-    # フォールバック：全フィルターからランダム
-    from config import FILTERS
-    return random.choice(list(FILTERS.keys()))
+    # フォールバック：固定フィルター
+    return "写ルンです"
 
     # フィルターと環境音の相性定義
     FILTER_SE_MAP = {
