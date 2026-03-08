@@ -37,10 +37,10 @@ jobs:
         run: |
           pip install \
             numpy pillow \
+            moviepy \
             requests \
             google-auth google-auth-oauthlib google-api-python-client \
             tweepy \
-            yt-dlp \
             pyluach \
             ephem
 
@@ -55,7 +55,8 @@ jobs:
         env:
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
         run: |
-          python3 scripts/get_conditions.py >> $GITHUB_OUTPUT
+          python3 scripts/get_conditions.py 2>&1 | tee /tmp/conditions_log.txt
+          grep "^[a-zA-Z_]*=" /tmp/conditions_log.txt >> $GITHUB_OUTPUT
 
       # ===== 素材選択 =====
       - name: 素材を選択
@@ -93,7 +94,8 @@ jobs:
           EMOTION_TAGS: ${{ steps.selection.outputs.emotion_tags }}
           CONDITIONS: ${{ steps.conditions.outputs.conditions_json }}
         run: |
-          python3 scripts/generate_captions.py >> $GITHUB_OUTPUT
+          python3 scripts/generate_captions.py 2>&1 | tee /tmp/captions_log.txt
+          grep "^[a-zA-Z_]*=" /tmp/captions_log.txt >> $GITHUB_OUTPUT
 
       # ===== 各SNSへ投稿 =====
       - name: Xに投稿
@@ -107,7 +109,8 @@ jobs:
           VIDEO_PATH: ${{ steps.generate.outputs.video_path }}
           CAPTION: ${{ steps.captions.outputs.x_caption }}
         run: |
-          python3 scripts/post_x.py >> $GITHUB_OUTPUT
+          python3 scripts/post_x.py 2>&1 | tee /tmp/post_x_log.txt
+          grep "^[a-zA-Z_]*=" /tmp/post_x_log.txt >> $GITHUB_OUTPUT
 
       - name: YouTubeに投稿
         if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
@@ -120,7 +123,8 @@ jobs:
           POEM: ${{ steps.selection.outputs.poem }}
           POST_DATE: ${{ steps.conditions.outputs.date }}
         run: |
-          python3 scripts/post_youtube.py >> $GITHUB_OUTPUT
+          python3 scripts/post_youtube.py 2>&1 | tee /tmp/post_youtube_log.txt
+          grep "^[a-zA-Z_]*=" /tmp/post_youtube_log.txt >> $GITHUB_OUTPUT
 
       - name: Instagramに投稿
         if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
@@ -131,7 +135,8 @@ jobs:
           VIDEO_PATH: ${{ steps.generate.outputs.video_path }}
           CAPTION: ${{ steps.captions.outputs.instagram_caption }}
         run: |
-          python3 scripts/post_instagram.py >> $GITHUB_OUTPUT
+          python3 scripts/post_instagram.py 2>&1 | tee /tmp/post_instagram_log.txt
+          grep "^[a-zA-Z_]*=" /tmp/post_instagram_log.txt >> $GITHUB_OUTPUT
 
       - name: TikTok用ファイルを準備
         if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
