@@ -15,10 +15,10 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from tameiki.config import FONT_PATH, FONT_IDX, C_TEXT
-from tameiki.filters import apply_filter
-from tameiki.background import prepare_bg
-from tameiki.easing import ease_out
+from config import FONT_PATH, FONT_IDX, C_TEXT
+from filters import apply_filter
+from background import prepare_bg
+from easing import ease_out
 
 SIZES = {
     "youtube_community": (1080, 1080),  # 1:1
