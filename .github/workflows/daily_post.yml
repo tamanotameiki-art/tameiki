@@ -79,7 +79,8 @@ jobs:
           SELECTION: ${{ steps.selection.outputs.selection_json }}
           CONDITIONS: ${{ steps.conditions.outputs.conditions_json }}
         run: |
-          python3 scripts/run_generate.py >> $GITHUB_OUTPUT
+          python3 scripts/run_generate.py 2>&1 | tee /tmp/generate_log.txt
+          grep "^[a-zA-Z_]*=" /tmp/generate_log.txt >> $GITHUB_OUTPUT
 
       # ===== キャプション生成 =====
       - name: SNS別キャプションを生成
