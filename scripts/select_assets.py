@@ -96,14 +96,12 @@ def select_poem(service, spreadsheet_id, conditions):
     unpublished = [x for x in scored if x["status"] == "未投稿"]
     published   = [x for x in scored if x["status"] != "未投稿"]
 
-    # 優先順位ロジック
     candidates = [x for x in unpublished if x["score"] >= 2]
     if not candidates:
         candidates = [x for x in unpublished if x["score"] >= 1]
     if not candidates:
         candidates = unpublished
 
-    # 未投稿がスコア0のみ → 過去作のスコア1以上を優先
     if candidates and all(x["score"] == 0 for x in candidates):
         better_past = [x for x in published if x["score"] >= 1]
         if better_past:
@@ -202,15 +200,20 @@ def select_filter(poem_tags, video_tags=None, used_filters=None):
 
     scored.sort(key=lambda x: -x["score"])
 
-    # 85%で最高スコア、15%でランダム（意外な組み合わせを許容）
     if scored and scored[0]["score"] > 0 and random.random() < 0.85:
         return scored[0]["name"]
     if scored:
         return random.choice(scored[:min(3, len(scored))])["name"]
-    # フォールバック：固定フィルター
     return "写ルンです"
 
-    # フィルターと環境音の相性定義
+
+def select_se(service, spreadsheet_id, poem_tags, filter_name):
+    """環境音を選択（最大3レイヤー）"""
+    data = get_sheet_data(service, spreadsheet_id, "環境音")
+    if len(data) <= 1:
+        return []
+    rows = data[1:]
+
     FILTER_SE_MAP = {
         "写ルンです":   [("レコードノイズ", "メイン"), ("雨", "サブ")],
         "VHS":          [("ブラウン管ノイズ", "メイン"), ("雑踏", "サブ")],
@@ -232,7 +235,6 @@ def select_filter(poem_tags, video_tags=None, used_filters=None):
     selected  = []
 
     for se_kind, layer in preferred:
-        # 該当する環境音を探す
         matches = [r for r in rows if len(r) > 2 and se_kind in str(r[2])]
         if matches:
             chosen = random.choice(matches)
@@ -253,7 +255,7 @@ def check_compatibility(poem, video_name, filter_name, conditions):
     """ClaudeによるNGチェック（3回まで）"""
     api_key = os.environ.get("CLAUDE_API_KEY", "")
     if not api_key:
-        return True  # API未設定の場合はスキップ
+        return True
 
     prompt = f"""
 以下の組み合わせが「たまのためいき。」の世界観として成立するか判断してください。
@@ -307,11 +309,9 @@ def main():
 
     service = get_sheets_service()
 
-    # 最大3回リトライ
     for attempt in range(3):
         print(f"素材選択 試行 {attempt + 1}/3", flush=True)
 
-        # 詩を選択
         if force_poem:
             poem_data = {"poem": force_poem, "row": [], "row_idx": None, "score": 0}
         else:
@@ -320,22 +320,19 @@ def main():
         poem = poem_data["poem"]
         print(f"詩: {poem[:30]}...", flush=True)
 
-        # 投稿履歴から使用済み素材を取得
         history = get_sheet_data(service, spreadsheet_id, "投稿履歴")
         used_videos  = []
         used_filters = []
         for row in history[1:]:
-            if len(row) > 0 and row[1] == poem:  # 同じ詩の履歴
+            if len(row) > 0 and row[1] == poem:
                 if len(row) > 2: used_videos.append(row[2])
                 if len(row) > 3: used_filters.append(row[3])
 
-        # 動画を選択
         video_data = select_video(service, spreadsheet_id, poem_data, used_videos)
         video_name = video_data["file_name"] if video_data else "default"
         video_id   = video_data["file_id"]   if video_data else ""
         print(f"動画: {video_name}", flush=True)
 
-        # フィルターを選択
         poem_tags = {}
         if poem_data.get("row") and len(poem_data["row"]) > 10:
             row = poem_data["row"]
@@ -350,24 +347,20 @@ def main():
         )
         print(f"フィルター: {filter_name}", flush=True)
 
-        # 相性チェック
         ok = check_compatibility(poem, video_name, filter_name, conditions)
         if ok:
             print(f"相性チェック: OK", flush=True)
             break
         else:
-            print(f"相性チェック: NG → リトライ", flush=True)
+            print(f"相性チェック: NG リトライ", flush=True)
             if attempt == 2:
-                print("3回NGのため、最後の組み合わせで続行", flush=True)
+                print("3回NGのため最後の組み合わせで続行", flush=True)
 
-    # 環境音を選択
     se_list = select_se(service, spreadsheet_id, poem_tags, filter_name)
     print(f"環境音: {[s['kind'] for s in se_list]}", flush=True)
 
-    # 感情タグ
     emotion_tags = poem_tags.get("emotion", "any")
 
-    # 出力
     selection = {
         "poem":          poem,
         "poem_row_idx":  poem_data.get("row_idx"),
@@ -381,7 +374,7 @@ def main():
     }
 
     selection_json = json.dumps(selection, ensure_ascii=False)
-    print(f"\nselection_json={selection_json}")
+    print(f"selection_json={selection_json}")
     print(f"poem={poem}")
     print(f"filter_name={filter_name}")
     print(f"video_id={video_id}")
