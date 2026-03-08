@@ -134,9 +134,10 @@ def apply_bloom(img, strength=0.15, fi=0):
         return img
     actual = strength * (1.0 + random_jitter(fi, 0.12, seed=55))
     arr = np.array(img).astype(np.float32)
+    h, w = arr.shape[:2]
     bright = np.clip(arr - 180, 0, 75) / 75.0
-    small  = Image.fromarray((bright * 255).astype(np.uint8)).resize((W//4, H//4), Image.BILINEAR)
-    blurred = small.filter(ImageFilter.GaussianBlur(radius=5)).resize((W, H), Image.BILINEAR)
+    small  = Image.fromarray((bright * 255).astype(np.uint8)).resize((w//4, h//4), Image.BILINEAR)
+    blurred = small.filter(ImageFilter.GaussianBlur(radius=5)).resize((w, h), Image.BILINEAR)
     blur_arr = np.array(blurred).astype(np.float32) / 255.0
     return Image.fromarray(np.clip(arr + blur_arr * actual * 80, 0, 255).astype(np.uint8))
 
