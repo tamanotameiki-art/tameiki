@@ -203,18 +203,13 @@ def select_filter(poem_tags, video_tags=None, used_filters=None):
     scored.sort(key=lambda x: -x["score"])
 
     # 85%で最高スコア、15%でランダム（意外な組み合わせを許容）
-    if scored[0]["score"] > 0 and random.random() < 0.85:
+    if scored and scored[0]["score"] > 0 and random.random() < 0.85:
         return scored[0]["name"]
-    return random.choice(scored[:min(3, len(scored))])["name"]
-
-
-def select_se(service, spreadsheet_id, poem_tags, filter_name):
-    """環境音を選択（最大3レイヤー）"""
-    data = get_sheet_data(service, spreadsheet_id, "環境音")
-    if len(data) <= 1:
-        return []
-
-    rows = data[1:]
+    if scored:
+        return random.choice(scored[:min(3, len(scored))])["name"]
+    # フォールバック：全フィルターからランダム
+    from config import FILTERS
+    return random.choice(list(FILTERS.keys()))
 
     # フィルターと環境音の相性定義
     FILTER_SE_MAP = {
