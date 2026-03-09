@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
 scripts/run_generate.py
-動画生成を実行し、サムネイル抽出・Drive保存・URL取得を行う
+動画生成を実行し、サムネイル抽出・BGM合成・Drive保存・URL取得を行う
 """
 import os
 import sys
 import json
 import subprocess
-import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -24,45 +23,151 @@ def main():
     # 動画素材をDriveからダウンロード
     bg_path = download_video_asset(video_id)
 
- # 動画生成
-    output_path   = "/tmp/tameiki_output.mp4"
-    thumbnail_path = "/tmp/tameiki_thumb.jpg"
+    # 動画生成
+    output_path_silent = "/tmp/tameiki_silent.mp4"
+    output_path        = "/tmp/tameiki_output.mp4"
+    thumbnail_path     = "/tmp/tameiki_thumb.jpg"
     print(f"動画生成開始: {filter_name} / {emotion_tags}", flush=True)
     from generate import generate
     success = generate(
-        text          = poem,
-        bg_path       = bg_path,
-        filter_name   = filter_name,
-        emotion_tags  = emotion_tags,
-        output_path   = output_path,
-        frames_dir    = "/tmp/tameiki_frames",
-        seed          = hash(poem + filter_name) % 10000,
+        text         = poem,
+        bg_path      = bg_path,
+        filter_name  = filter_name,
+        emotion_tags = emotion_tags,
+        output_path  = output_path_silent,
+        frames_dir   = "/tmp/tameiki_frames",
+        seed         = hash(poem + filter_name) % 10000,
     )
     if not success:
         print("動画生成失敗", flush=True)
         print("success=false")
         return
 
-    # サムネイル抽出（1行目テキスト表示完了フレーム）
+    # BGMをダウンロードして合成
+    bgm_path = download_bgm(
+        os.environ.get("SPREADSHEET_ID", ""),
+        os.environ.get("GOOGLE_CREDENTIALS", "")
+    )
+    if bgm_path:
+        merge_bgm(output_path_silent, bgm_path, output_path)
+    else:
+        # BGMなしの場合はそのまま使用
+        import shutil
+        shutil.copy(output_path_silent, output_path)
+        print("BGMなしで続行", flush=True)
+
+    # サムネイル抽出
     extract_thumbnail(output_path, thumbnail_path, poem)
 
-    # DriveにアップロードしてURLを取得
     video_url = output_path
-
     print(f"success=true")
     print(f"video_path={output_path}")
     print(f"thumbnail_path={thumbnail_path}")
     print(f"video_url={video_url}")
 
-    # 環境変数に設定（post_instagram.pyが参照）
     with open(os.environ.get("GITHUB_ENV", "/dev/null"), "a") as f:
         f.write(f"VIDEO_URL={video_url}\n")
+
+
+def download_bgm(spreadsheet_id, creds_json_str):
+    """スプレッドシートからBGMを選んでダウンロード"""
+    if not spreadsheet_id or not creds_json_str:
+        return None
+    try:
+        import google.oauth2.service_account as sa
+        from googleapiclient.discovery import build
+        from googleapiclient.http import MediaIoBaseDownload
+        import io
+
+        creds_info = json.loads(creds_json_str)
+        creds = sa.Credentials.from_service_account_info(
+            creds_info,
+            scopes=[
+                "https://www.googleapis.com/auth/spreadsheets.readonly",
+                "https://www.googleapis.com/auth/drive.readonly"
+            ]
+        )
+        sheets = build("sheets", "v4", credentials=creds)
+        drive  = build("drive", "v3", credentials=creds)
+
+        # BGMシートから有効なBGMを取得
+        result = sheets.spreadsheets().values().get(
+            spreadsheetId=spreadsheet_id,
+            range="BGM!A:L"
+        ).execute()
+        rows = result.get("values", [])
+        if len(rows) <= 1:
+            print("BGMが登録されていません", flush=True)
+            return None
+
+        # ステータスが「有効」のBGMを選ぶ
+        candidates = []
+        for row in rows[1:]:
+            if len(row) >= 12 and row[11] == "有効":
+                candidates.append({"file_id": row[1], "file_name": row[0], "use_count": int(row[9]) if row[9] else 0})
+
+        if not candidates:
+            print("有効なBGMがありません", flush=True)
+            return None
+
+        # 使用回数が少ない順に選ぶ
+        candidates.sort(key=lambda x: x["use_count"])
+        bgm = candidates[0]
+
+        output_path = f"/tmp/bgm_{bgm['file_id'][:8]}{os.path.splitext(bgm['file_name'])[1]}"
+        if os.path.exists(output_path):
+            return output_path
+
+        print(f"BGMをダウンロード中: {bgm['file_name']}", flush=True)
+        request = drive.files().get_media(fileId=bgm["file_id"])
+        with open(output_path, "wb") as f:
+            downloader = MediaIoBaseDownload(f, request)
+            done = False
+            while not done:
+                _, done = downloader.next_chunk()
+
+        print(f"BGMダウンロード完了: {output_path}", flush=True)
+        return output_path
+
+    except Exception as e:
+        print(f"BGMダウンロードエラー（スキップ）: {e}", flush=True)
+        return None
+
+
+def merge_bgm(video_path, bgm_path, output_path, video_duration=20.0):
+    """動画にBGMを合成する（BGMをループ・フェードアウト付き）"""
+    try:
+        fade_out_start = video_duration - 2.0
+        cmd = [
+            "ffmpeg", "-y",
+            "-i", video_path,
+            "-stream_loop", "-1", "-i", bgm_path,
+            "-t", str(video_duration),
+            "-filter_complex",
+            f"[1:a]afade=t=out:st={fade_out_start}:d=2.0,volume=0.7[bgm]",
+            "-map", "0:v",
+            "-map", "[bgm]",
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-shortest",
+            output_path
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"BGM合成エラー: {result.stderr}", flush=True)
+            import shutil
+            shutil.copy(video_path, output_path)
+        else:
+            print(f"BGM合成完了: {output_path}", flush=True)
+    except Exception as e:
+        print(f"BGM合成例外（スキップ）: {e}", flush=True)
+        import shutil
+        shutil.copy(video_path, output_path)
 
 
 def download_video_asset(file_id):
     """Google DriveからDL"""
     if not file_id:
-        # デフォルト背景（静止画）
         return os.path.join(os.path.dirname(__file__), "..", "assets", "default_bg.jpg")
 
     import google.oauth2.service_account as sa
@@ -93,15 +198,10 @@ def download_video_asset(file_id):
 
 
 def extract_thumbnail(video_path, thumb_path, poem):
-    """
-    サムネイル抽出：1行目の最後の文字が表示された瞬間のフレーム
-    TEXT_DELAY + (1行目の文字数 * CHAR_INTERVAL) 秒地点
-    """
+    """サムネイル抽出"""
     from config import TEXT_DELAY, CHAR_INTERVAL
-
     first_line = poem.split("\n")[0]
-    t = TEXT_DELAY + len(first_line) * CHAR_INTERVAL + 0.5  # 少し余裕
-
+    t = TEXT_DELAY + len(first_line) * CHAR_INTERVAL + 0.5
     cmd = [
         "ffmpeg", "-y",
         "-ss", str(t),
@@ -114,107 +214,5 @@ def extract_thumbnail(video_path, thumb_path, poem):
     print(f"サムネイル抽出: {t:.1f}秒地点 → {thumb_path}", flush=True)
 
 
-def upload_to_drive(file_path, file_name):
-    """DrivにアップロードしてURLを返す"""
-    import google.oauth2.service_account as sa
-    from googleapiclient.discovery import build
-    from googleapiclient.http import MediaFileUpload
-
-    creds_json = json.loads(os.environ["GOOGLE_CREDENTIALS"])
-    creds = sa.Credentials.from_service_account_info(
-        creds_json,
-        scopes=["https://www.googleapis.com/auth/drive.file"]
-    )
-    drive = build("drive", "v3", credentials=creds)
-
-    # キャッシュフォルダに保存（フォルダID直接指定）
-    folder_id = "1tNvlWRtS7wothPyI693YBuR6CQjEXG8i"
-    metadata = {"name": file_name, "parents": [folder_id]}
-    media = MediaFileUpload(file_path, mimetype="video/mp4", resumable=True)
-    file = drive.files().create(
-        body=metadata,
-        media_body=media,
-        fields="id,webContentLink"
-    ).execute()
-
-    # 公開アクセスを設定
-    drive.permissions().create(
-        fileId=file["id"],
-        body={"type": "anyone", "role": "reader"}
-    ).execute()
-
-    url = f"https://drive.google.com/uc?id={file['id']}"
-    print(f"Drive URL: {url}", flush=True)
-    return url
-
-
 if __name__ == "__main__":
     main()
-
-
-# ======================================================================
-# scripts/prepare_tiktok.py
-# TikTok用ファイルをiPhoneショートカット経由で投稿できるよう準備
-# ======================================================================
-"""
-TikTokは公式APIが制限されているため、
-生成した動画とキャプションをDriveの専用フォルダに保存し
-iPhoneショートカットから投稿する半自動フロー。
-"""
-
-import os
-import json
-
-def prepare_tiktok():
-    video_path  = os.environ.get("VIDEO_PATH", "")
-    caption     = os.environ.get("CAPTION", "")
-
-    if not video_path:
-        return
-
-    import google.oauth2.service_account as sa
-    from googleapiclient.discovery import build
-    from googleapiclient.http import MediaFileUpload
-
-    creds_json = json.loads(os.environ["GOOGLE_CREDENTIALS"])
-    creds = sa.Credentials.from_service_account_info(
-        creds_json,
-        scopes=["https://www.googleapis.com/auth/drive.file"]
-    )
-    drive = build("drive", "v3", credentials=creds)
-
-    # TikTok専用フォルダを探す
-    folders = drive.files().list(
-        q="name='tameiki_tiktok' and mimeType='application/vnd.google-apps.folder'",
-        fields="files(id)"
-    ).execute().get("files", [])
-
-    folder_id = folders[0]["id"] if folders else None
-
-    # 動画をアップロード
-    metadata = {"name": "tiktok_today.mp4"}
-    if folder_id:
-        metadata["parents"] = [folder_id]
-
-    media = MediaFileUpload(video_path, mimetype="video/mp4")
-    drive.files().create(body=metadata, media_body=media).execute()
-
-    # キャプションをテキストファイルとして保存
-    caption_metadata = {"name": "tiktok_caption.txt"}
-    if folder_id:
-        caption_metadata["parents"] = [folder_id]
-
-    import io
-    from googleapiclient.http import MediaIoBaseUpload
-    caption_bytes = caption.encode("utf-8")
-    media_caption = MediaIoBaseUpload(
-        io.BytesIO(caption_bytes),
-        mimetype="text/plain"
-    )
-    drive.files().create(
-        body=caption_metadata,
-        media_body=media_caption
-    ).execute()
-
-    print("TikTok用ファイルをDriveに保存しました", flush=True)
-    print("iPhoneショートカットから投稿してください", flush=True)
