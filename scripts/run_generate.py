@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 scripts/run_generate.py
-動画生成を実行し、サムネイル抽出・BGM合成・Drive保存・URL取得を行う
+動画生成を実行し、サムネイル抽出・BGM合成・環境音合成・Drive保存・URL取得を行う
 """
 import os
 import sys
@@ -9,6 +9,31 @@ import json
 import subprocess
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+
+def measure_rms_lufs(path):
+    """ffmpegでRMS/LUFSを測定して返す（dB値）"""
+    cmd = [
+        "ffmpeg", "-i", path,
+        "-af", "loudnorm=I=-14:TP=-1:LRA=11:print_format=json",
+        "-f", "null", "-"
+    ]
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    # loudnormのJSON出力からinput_iを取得
+    import re
+    m = re.search(r'"input_i"\s*:\s*"([-\d.]+)"', r.stderr)
+    if m:
+        return float(m.group(1))
+    return -14.0  # 取得失敗時はデフォルト
+
+
+def calc_volume_factor(measured_lufs, target_lufs):
+    """測定値とターゲットの差からvolumeフィルターの倍率を計算"""
+    diff = target_lufs - measured_lufs
+    factor = 10 ** (diff / 20.0)
+    # 0.05〜2.0の範囲にクランプ（極端な増幅・減衰を防ぐ）
+    return max(0.05, min(2.0, factor))
+
 
 def main():
     selection  = json.loads(os.environ.get("SELECTION", "{}"))
@@ -23,7 +48,7 @@ def main():
     # 動画素材をDriveからダウンロード
     bg_path = download_video_asset(video_id)
 
-    # 動画生成
+    # 動画生成（音声なし）
     output_path_silent = "/tmp/tameiki_silent.mp4"
     output_path        = "/tmp/tameiki_output.mp4"
     thumbnail_path     = "/tmp/tameiki_thumb.jpg"
@@ -43,18 +68,17 @@ def main():
         print("success=false")
         return
 
-    # BGMをダウンロードして合成
-    bgm_path = download_bgm(
-        os.environ.get("SPREADSHEET_ID", ""),
-        os.environ.get("GOOGLE_CREDENTIALS", "")
-    )
-    if bgm_path:
-        merge_bgm(output_path_silent, bgm_path, output_path)
-    else:
-        # BGMなしの場合はそのまま使用
-        import shutil
-        shutil.copy(output_path_silent, output_path)
-        print("BGMなしで続行", flush=True)
+    creds_str      = os.environ.get("GOOGLE_CREDENTIALS", "")
+    spreadsheet_id = os.environ.get("SPREADSHEET_ID", "")
+
+    # BGMをダウンロード
+    bgm_path = download_bgm(spreadsheet_id, creds_str)
+
+    # 環境音をダウンロード（最大2本）
+    se_paths = download_se(spreadsheet_id, creds_str, emotion_tags)
+
+    # BGM + 環境音を動画に合成
+    merge_audio(output_path_silent, bgm_path, se_paths, output_path)
 
     # サムネイル抽出
     extract_thumbnail(output_path, thumbnail_path, poem)
@@ -69,6 +93,89 @@ def main():
         f.write(f"VIDEO_URL={video_url}\n")
 
 
+def merge_audio(video_path, bgm_path, se_paths, output_path, video_duration=20.0):
+    """
+    動画にBGM＋環境音を合成する。
+    各音源のLUFSを測定して音量を自動正規化してから合成。
+    BGM: -20 LUFS相当（詩の邪魔をしない音量）
+    環境音: -28 LUFS相当（うっすら漂う程度）
+    """
+    import shutil
+
+    fade_out_start = video_duration - 2.0
+
+    # 入力ファイルリストとフィルターを動的に構築
+    inputs = ["-i", video_path]
+    filter_parts = []
+    audio_labels = []
+    input_idx = 1  # 0は映像
+
+    # BGM
+    if bgm_path and os.path.exists(bgm_path):
+        bgm_lufs = measure_rms_lufs(bgm_path)
+        bgm_vol  = calc_volume_factor(bgm_lufs, -20.0)
+        print(f"BGM LUFS: {bgm_lufs:.1f} → volume={bgm_vol:.3f}", flush=True)
+        inputs += ["-stream_loop", "-1", "-i", bgm_path]
+        filter_parts.append(
+            f"[{input_idx}:a]"
+            f"volume={bgm_vol:.3f},"
+            f"afade=t=out:st={fade_out_start}:d=2.0"
+            f"[bgm]"
+        )
+        audio_labels.append("[bgm]")
+        input_idx += 1
+    else:
+        print("BGMなし", flush=True)
+
+    # 環境音（最大2本）
+    for i, se_path in enumerate(se_paths[:2]):
+        if not se_path or not os.path.exists(se_path):
+            continue
+        se_lufs = measure_rms_lufs(se_path)
+        se_vol  = calc_volume_factor(se_lufs, -28.0)
+        label   = f"se{i+1}"
+        print(f"環境音{i+1} LUFS: {se_lufs:.1f} → volume={se_vol:.3f}", flush=True)
+        inputs += ["-stream_loop", "-1", "-i", se_path]
+        filter_parts.append(
+            f"[{input_idx}:a]"
+            f"volume={se_vol:.3f},"
+            f"afade=t=out:st={fade_out_start}:d=2.0"
+            f"[{label}]"
+        )
+        audio_labels.append(f"[{label}]")
+        input_idx += 1
+
+    # 音声がひとつもない場合はそのままコピー
+    if not audio_labels:
+        shutil.copy(video_path, output_path)
+        print("音声素材なし・動画をそのまま使用", flush=True)
+        return
+
+    # amixで合成
+    n = len(audio_labels)
+    mix_inputs = "".join(audio_labels)
+    filter_complex = ";".join(filter_parts) + f";{mix_inputs}amix=inputs={n}:duration=first:normalize=0[aout]"
+
+    cmd = [
+        "ffmpeg", "-y",
+        *inputs,
+        "-t", str(video_duration),
+        "-filter_complex", filter_complex,
+        "-map", "0:v",
+        "-map", "[aout]",
+        "-c:v", "copy",
+        "-c:a", "aac",
+        "-shortest",
+        output_path
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"音声合成エラー: {result.stderr[-500:]}", flush=True)
+        shutil.copy(video_path, output_path)
+    else:
+        print(f"音声合成完了: BGM×1 + 環境音×{len(se_paths)}", flush=True)
+
+
 def download_bgm(spreadsheet_id, creds_json_str):
     """スプレッドシートからBGMを選んでダウンロード"""
     if not spreadsheet_id or not creds_json_str:
@@ -77,7 +184,6 @@ def download_bgm(spreadsheet_id, creds_json_str):
         import google.oauth2.service_account as sa
         from googleapiclient.discovery import build
         from googleapiclient.http import MediaIoBaseDownload
-        import io
 
         creds_info = json.loads(creds_json_str)
         creds = sa.Credentials.from_service_account_info(
@@ -90,7 +196,6 @@ def download_bgm(spreadsheet_id, creds_json_str):
         sheets = build("sheets", "v4", credentials=creds)
         drive  = build("drive", "v3", credentials=creds)
 
-        # BGMシートから有効なBGMを取得
         result = sheets.spreadsheets().values().get(
             spreadsheetId=spreadsheet_id,
             range="BGM!A:L"
@@ -100,21 +205,24 @@ def download_bgm(spreadsheet_id, creds_json_str):
             print("BGMが登録されていません", flush=True)
             return None
 
-        # ステータスが「有効」のBGMを選ぶ
         candidates = []
         for row in rows[1:]:
             if len(row) >= 12 and row[11] == "有効":
-                candidates.append({"file_id": row[1], "file_name": row[0], "use_count": int(row[9]) if row[9] else 0})
+                candidates.append({
+                    "file_id":   row[1],
+                    "file_name": row[0],
+                    "use_count": int(row[9]) if len(row) > 9 and row[9] else 0
+                })
 
         if not candidates:
             print("有効なBGMがありません", flush=True)
             return None
 
-        # 使用回数が少ない順に選ぶ
         candidates.sort(key=lambda x: x["use_count"])
         bgm = candidates[0]
 
-        output_path = f"/tmp/bgm_{bgm['file_id'][:8]}{os.path.splitext(bgm['file_name'])[1]}"
+        ext = os.path.splitext(bgm["file_name"])[1]
+        output_path = f"/tmp/bgm_{bgm['file_id'][:8]}{ext}"
         if os.path.exists(output_path):
             return output_path
 
@@ -134,35 +242,71 @@ def download_bgm(spreadsheet_id, creds_json_str):
         return None
 
 
-def merge_bgm(video_path, bgm_path, output_path, video_duration=20.0):
-    """動画にBGMを合成する（BGMをループ・フェードアウト付き）"""
+def download_se(spreadsheet_id, creds_json_str, emotion_tags):
+    """スプレッドシートから環境音を最大2本選んでダウンロード"""
+    if not spreadsheet_id or not creds_json_str:
+        return []
     try:
-        fade_out_start = video_duration - 2.0
-        cmd = [
-            "ffmpeg", "-y",
-            "-i", video_path,
-            "-stream_loop", "-1", "-i", bgm_path,
-            "-t", str(video_duration),
-            "-filter_complex",
-            f"[1:a]afade=t=out:st={fade_out_start}:d=2.0,volume=0.7[bgm]",
-            "-map", "0:v",
-            "-map", "[bgm]",
-            "-c:v", "copy",
-            "-c:a", "aac",
-            "-shortest",
-            output_path
-        ]
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        if result.returncode != 0:
-            print(f"BGM合成エラー: {result.stderr}", flush=True)
-            import shutil
-            shutil.copy(video_path, output_path)
-        else:
-            print(f"BGM合成完了: {output_path}", flush=True)
+        import google.oauth2.service_account as sa
+        from googleapiclient.discovery import build
+        from googleapiclient.http import MediaIoBaseDownload
+
+        creds_info = json.loads(creds_json_str)
+        creds = sa.Credentials.from_service_account_info(
+            creds_info,
+            scopes=[
+                "https://www.googleapis.com/auth/spreadsheets.readonly",
+                "https://www.googleapis.com/auth/drive.readonly"
+            ]
+        )
+        sheets = build("sheets", "v4", credentials=creds)
+        drive  = build("drive", "v3", credentials=creds)
+
+        result = sheets.spreadsheets().values().get(
+            spreadsheetId=spreadsheet_id,
+            range="環境音!A:L"
+        ).execute()
+        rows = result.get("values", [])
+        if len(rows) <= 1:
+            print("環境音が登録されていません", flush=True)
+            return []
+
+        # 感情タグとのマッチングでスコアリング
+        scored = []
+        for row in rows[1:]:
+            if len(row) < 2 or not row[1]:
+                continue
+            file_id   = row[1]
+            file_name = row[0]
+            use_count = int(row[10]) if len(row) > 10 and row[10] else 0
+            se_tags   = [str(row[i]) for i in range(3, 9) if i < len(row) and row[i]]
+
+            score = sum(1 for et in emotion_tags if any(et in st for st in se_tags))
+            scored.append({"file_id": file_id, "file_name": file_name, "score": score, "use_count": use_count})
+
+        scored.sort(key=lambda x: (-x["score"], x["use_count"]))
+
+        # 上位2本をダウンロード
+        se_paths = []
+        for se in scored[:2]:
+            ext = os.path.splitext(se["file_name"])[1]
+            output_path = f"/tmp/se_{se['file_id'][:8]}{ext}"
+            if not os.path.exists(output_path):
+                print(f"環境音をダウンロード中: {se['file_name']}", flush=True)
+                request = drive.files().get_media(fileId=se["file_id"])
+                with open(output_path, "wb") as f:
+                    downloader = MediaIoBaseDownload(f, request)
+                    done = False
+                    while not done:
+                        _, done = downloader.next_chunk()
+            se_paths.append(output_path)
+            print(f"環境音ダウンロード完了: {se['file_name']}", flush=True)
+
+        return se_paths
+
     except Exception as e:
-        print(f"BGM合成例外（スキップ）: {e}", flush=True)
-        import shutil
-        shutil.copy(video_path, output_path)
+        print(f"環境音ダウンロードエラー（スキップ）: {e}", flush=True)
+        return []
 
 
 def download_video_asset(file_id):
@@ -173,7 +317,6 @@ def download_video_asset(file_id):
     import google.oauth2.service_account as sa
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaIoBaseDownload
-    import io
 
     creds_json = json.loads(os.environ["GOOGLE_CREDENTIALS"])
     creds = sa.Credentials.from_service_account_info(
