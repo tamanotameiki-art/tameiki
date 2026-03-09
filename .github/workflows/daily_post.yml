@@ -81,6 +81,7 @@ jobs:
         id: generate
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
           SELECTION: ${{ steps.selection.outputs.selection_json }}
           CONDITIONS: ${{ steps.conditions.outputs.conditions_json }}
         run: |
