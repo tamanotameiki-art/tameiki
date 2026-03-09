@@ -10,6 +10,7 @@ Pinterest:            2:3 (1000x1500)
 import os
 import sys
 import json
+import subprocess
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
@@ -17,7 +18,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from config import FONT_PATH, FONT_IDX, C_TEXT
 from filters import apply_filter
-from background import prepare_bg
+from background import is_video_file, get_video_duration, crop_and_resize
 from easing import ease_out
 
 SIZES = {
@@ -35,21 +36,14 @@ def generate_still(poem, bg_path, filter_name, emotion_tags, output_dir="/tmp/ta
     for name, (w, h) in SIZES.items():
         output_path = f"{output_dir}/{name}.jpg"
 
-        # 背景を指定サイズでクロップ
-        bg = prepare_bg_custom_size(bg_path, w, h)
-
-        # フィルター適用（最もきれいなフレームとして fi=0 固定）
+        bg    = prepare_bg_custom_size(bg_path, w, h)
         frame = apply_filter(bg, filter_name, fi=0)
 
-        # テキストを全文表示した静止画として描画
         frame_rgba = frame.convert("RGBA")
         txt_layer  = draw_full_text(poem, w, h, font_size=int(min(w, h) * 0.055))
         frame_rgba = Image.alpha_composite(frame_rgba, txt_layer)
-
-        # ロゴを右下に配置（小さめ・控えめ・半透明）
         frame_rgba = add_logo(frame_rgba, w, h)
 
-        # JPEG保存
         frame_rgba.convert("RGB").save(output_path, quality=95)
         paths[name] = output_path
         print(f"静止画生成: {name} → {output_path}", flush=True)
@@ -58,10 +52,28 @@ def generate_still(poem, bg_path, filter_name, emotion_tags, output_dir="/tmp/ta
 
 
 def prepare_bg_custom_size(bg_path, w, h):
-    """任意サイズに背景をクロップ"""
+    """任意サイズに背景をクロップ（動画ファイル対応）"""
+    # 動画の場合は中間フレームを抽出
+    if is_video_file(bg_path):
+        frame_path = bg_path + f"_still_{w}x{h}.jpg"
+        if not os.path.exists(frame_path):
+            duration = get_video_duration(bg_path)
+            t = duration / 3.0
+            cmd = [
+                "ffmpeg", "-y",
+                "-ss", str(t),
+                "-i", bg_path,
+                "-vframes", "1",
+                "-q:v", "2",
+                frame_path
+            ]
+            subprocess.run(cmd, capture_output=True)
+            print(f"静止画用フレーム抽出: {t:.1f}秒地点 → {frame_path}", flush=True)
+        bg_path = frame_path
+
     img = Image.open(bg_path).convert("RGB")
     iw, ih = img.size
-    target_ratio = h / w
+    target_ratio  = h / w
     current_ratio = ih / iw
 
     if current_ratio > target_ratio:
@@ -99,7 +111,6 @@ def draw_full_text(poem, w, h, font_size=56):
             x = sx - li * line_gap
             y = sy + ci * char_gap
 
-            # グロー（奥行き感）
             glow = Image.new("RGBA", (w, h), (0, 0, 0, 0))
             gd   = ImageDraw.Draw(glow)
             gd.text((x, y), ch, font=font, fill=(255, 248, 230, 180))
@@ -107,7 +118,6 @@ def draw_full_text(poem, w, h, font_size=56):
             layer = Image.alpha_composite(layer, glow)
             d     = ImageDraw.Draw(layer)
 
-            # 本体
             d.text((x, y), ch, font=font, fill=(*C_TEXT, 240))
 
     return layer
@@ -118,10 +128,10 @@ def add_logo(img, w, h):
     font_size = int(min(w, h) * 0.028)
     try:
         font = ImageFont.truetype(FONT_PATH, font_size, index=FONT_IDX)
-    except:
+    except Exception:
         return img
 
-    logo_text = "たまのためいき。"
+    logo_text  = "たまのためいき。"
     logo_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     d = ImageDraw.Draw(logo_layer)
 
@@ -133,7 +143,7 @@ def add_logo(img, w, h):
     x = w - lw - margin
     y = h - lh - margin
 
-    d.text((x, y), logo_text, font=font, fill=(255, 248, 230, 120))  # 半透明
+    d.text((x, y), logo_text, font=font, fill=(255, 248, 230, 120))
     return Image.alpha_composite(img, logo_layer)
 
 
@@ -149,15 +159,11 @@ def main():
         print("詩が取得できませんでした", flush=True)
         return
 
-    # 背景はキャッシュ済みのものを使う
     bg_path = f"/tmp/tameiki_bg_{video_id[:8]}.mp4" if video_id else None
     if not bg_path or not os.path.exists(bg_path):
-        # デフォルト背景
         bg_path = os.path.join(os.path.dirname(__file__), "..", "assets", "default_bg.jpg")
 
     paths = generate_still(poem, bg_path, filter_name, emotion_tags)
-
-    # DriveにアップロードしてURLを保存（翌朝投稿ワークフローが参照）
     upload_stills_to_drive(paths)
 
 
@@ -178,17 +184,11 @@ def upload_stills_to_drive(paths):
         )
         drive = build("drive", "v3", credentials=creds)
 
-        folders = drive.files().list(
-            q="name='tameiki_morning_post' and mimeType='application/vnd.google-apps.folder'",
-            fields="files(id)"
-        ).execute().get("files", [])
-
-        folder_id = folders[0]["id"] if folders else None
+        # フォルダIDを直接指定
+        folder_id = "1VWhXy330DQpUB8fS8RzvxFXRxYPFOOyI"
 
         for name, path in paths.items():
-            metadata = {"name": f"{name}.jpg"}
-            if folder_id:
-                metadata["parents"] = [folder_id]
+            metadata = {"name": f"{name}.jpg", "parents": [folder_id]}
             media = MediaFileUpload(path, mimetype="image/jpeg")
             drive.files().create(body=metadata, media_body=media).execute()
             print(f"Drive保存完了: {name}", flush=True)
