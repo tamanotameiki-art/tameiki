@@ -8,7 +8,7 @@ import os
 import sys
 import shutil
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 sys.path.insert(0, os.path.dirname(__file__))
 
