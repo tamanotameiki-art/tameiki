@@ -2,15 +2,14 @@
 """
 tameiki/generate.py — メイン動画生成エンジン
 全モジュールを統合して20秒の縦型動画を生成する
+動画素材の場合はフレームを順番に使用（Ken Burnsはスキップ）
 """
 import os
 import sys
 import shutil
-import math
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageFilter
 
-# モジュールパスを追加
 sys.path.insert(0, os.path.dirname(__file__))
 
 from config import (
@@ -21,7 +20,10 @@ from config import (
 )
 from easing import ease_io, ease_out, ease_organic, clamp, random_jitter
 from filters import apply_filter
-from background import prepare_bg, ken_burns
+from background import (
+    prepare_bg, ken_burns,
+    is_video_file, extract_video_frames, load_video_frame, crop_and_resize
+)
 from text import draw_text_layer, calc_layout, get_appear_pattern
 from ending import draw_ending, get_ending_pattern
 
@@ -36,19 +38,6 @@ def generate(
     total_sec      = TOTAL_SEC,
     seed           = 42,
 ):
-    """
-    動画を生成する。
-
-    Args:
-        text:         詩のテキスト（改行区切り）
-        bg_path:      背景画像のパス
-        filter_name:  使用するフィルター名
-        emotion_tags: 感情タグのリスト（演出に影響）
-        output_path:  出力mp4パス
-        frames_dir:   一時フレーム保存ディレクトリ
-        total_sec:    総尺（秒）
-        seed:         ランダムシード（同じseedなら同じ動画）
-    """
     if emotion_tags is None:
         emotion_tags = []
 
@@ -81,7 +70,16 @@ def generate(
 
     # ===== 背景準備 =====
     print("背景準備中...")
-    base_bg = prepare_bg(bg_path)
+    use_video  = is_video_file(bg_path)
+    bg_frames_dir = frames_dir + "_bg"
+
+    if use_video:
+        # 動画：全フレームを事前展開
+        extract_video_frames(bg_path, bg_frames_dir, total_frames, FPS)
+        base_bg = None  # 動画の場合はフレームごとに読み込む
+    else:
+        # 静止画：1枚読み込んでKen Burns
+        base_bg = prepare_bg(bg_path)
 
     # ===== フレーム生成 =====
     os.makedirs(frames_dir, exist_ok=True)
@@ -91,8 +89,11 @@ def generate(
         if fi % FPS == 0:
             print(f"  {fi // FPS}s / {int(total_sec)}s")
 
-        # --- 背景（Ken Burns） ---
-        bg = ken_burns(base_bg, fi, total_frames, seed=seed)
+        # --- 背景 ---
+        if use_video:
+            bg = load_video_frame(bg_frames_dir, fi)
+        else:
+            bg = ken_burns(base_bg, fi, total_frames, seed=seed)
 
         # --- フィルター適用 ---
         frame = apply_filter(bg, filter_name, fi)
@@ -111,7 +112,8 @@ def generate(
         # --- テキスト描画 ---
         if T_TEXT_START <= fi < T_END_START:
             elapsed   = fi - T_TEXT_START
-            bg_arr    = np.array(base_bg)
+            # 動画の場合はフレームそのままをbg_arrに使う
+            bg_arr    = np.array(bg)
             txt_layer = draw_text_layer(
                 lines, elapsed, font_main,
                 appear_pattern=appear_pattern,
@@ -139,7 +141,9 @@ def generate(
         f"{output_path} 2>&1 | tail -5"
     )
     ret = os.system(cmd)
-    shutil.rmtree(frames_dir)
+    shutil.rmtree(frames_dir, ignore_errors=True)
+    if use_video:
+        shutil.rmtree(bg_frames_dir, ignore_errors=True)
 
     if ret == 0:
         print(f"\n完了: {output_path}")
