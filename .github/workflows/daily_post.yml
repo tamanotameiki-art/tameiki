@@ -2,8 +2,10 @@ name: たまのためいき。毎日自動投稿
 
 on:
   schedule:
-    # 毎日21:30 JST (12:30 UTC)
-    - cron: '30 12 * * *'
+    # 毎日21:00 JST (12:00 UTC)
+    - cron: '0 12 * * *'
+    # 翌朝8:00 JST (23:00 UTC) にアナリティクス収集
+    - cron: '0 23 * * *'
   workflow_dispatch:
     inputs:
       force_poem:
@@ -16,11 +18,20 @@ on:
         description: 'ドライラン（投稿せず動画生成のみ）'
         required: false
         default: 'false'
+      run_analytics:
+        description: 'アナリティクス収集のみ実行'
+        required: false
+        default: 'false'
 
 jobs:
+  # ===== 投稿ジョブ（毎日21:00 JST）=====
   generate_and_post:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    # アナリティクス収集のみのトリガーの場合はスキップ
+    if: >
+      github.event_name == 'workflow_dispatch' && inputs.run_analytics != 'true' ||
+      github.event_name == 'schedule' && (github.event.schedule == '0 12 * * *')
 
     steps:
       # ===== セットアップ =====
@@ -103,7 +114,6 @@ jobs:
           grep "^[a-zA-Z_]*=" /tmp/captions_log.txt >> $GITHUB_OUTPUT
 
       # ===== 各SNSへ投稿 =====
-      # YouTube を先に投稿してURLを取得し、XのキャプションにURLを付加する
       - name: YouTubeに投稿
         if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
         id: post_youtube
@@ -112,26 +122,12 @@ jobs:
           VIDEO_PATH: ${{ steps.generate.outputs.video_path }}
           THUMBNAIL_PATH: ${{ steps.generate.outputs.thumbnail_path }}
           CAPTION: ${{ steps.captions.outputs.youtube_caption }}
-          POEM: ${{ steps.selection.outputs.poem }}
+          POEM: ${{ steps.generate.outputs.poem_wrapped }}
           POST_DATE: ${{ steps.conditions.outputs.date }}
         run: |
           python3 scripts/post_youtube.py 2>&1 | tee /tmp/post_youtube_log.txt
           grep "^[a-zA-Z_]*=" /tmp/post_youtube_log.txt >> $GITHUB_OUTPUT || true
 
-      - name: Xに投稿
-        if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
-        id: post_x
-        env:
-          X_API_KEY: ${{ secrets.X_API_KEY }}
-          X_API_SECRET: ${{ secrets.X_API_SECRET }}
-          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
-          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
-          THUMBNAIL_PATH: ${{ steps.generate.outputs.thumbnail_path }}
-          CAPTION: ${{ steps.captions.outputs.x_caption }}
-          YOUTUBE_URL: ${{ steps.post_youtube.outputs.youtube_url }}
-        run: |
-          python3 scripts/post_x.py 2>&1 | tee /tmp/post_x_log.txt
-          grep "^[a-zA-Z_]*=" /tmp/post_x_log.txt >> $GITHUB_OUTPUT || true
 
       - name: Instagramに投稿
         if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
@@ -184,11 +180,12 @@ jobs:
           SELECTION: ${{ steps.selection.outputs.selection_json }}
           POST_IDS: |
             {
-              "x": "${{ steps.post_x.outputs.post_id }}",
-              "youtube": "${{ steps.post_youtube.outputs.video_id }}",
+
+              "youtube":   "${{ steps.post_youtube.outputs.video_id }}",
               "instagram": "${{ steps.post_instagram.outputs.media_id }}",
               "pinterest": "${{ steps.post_pinterest.outputs.pin_id }}"
             }
+          POST_TIME: ${{ steps.conditions.outputs.date }}
         run: |
           python3 scripts/record_history.py
 
@@ -221,3 +218,47 @@ jobs:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: |
           python3 scripts/cleanup_cache.py
+
+
+  # ===== アナリティクス収集ジョブ（毎朝8:00 JST）=====
+  collect_analytics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: >
+      github.event_name == 'schedule' && (github.event.schedule == '0 23 * * *') ||
+      github.event_name == 'workflow_dispatch' && inputs.run_analytics == 'true'
+
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Python セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 依存ライブラリをインストール
+        run: |
+          pip install \
+            requests \
+            google-auth google-auth-oauthlib google-api-python-client
+
+      # 昨日の投稿IDをスプレッドシートから取得して収集
+      - name: アナリティクスを収集
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+        run: |
+          python3 scripts/collect_analytics.py 2>&1
+
+      - name: エラー通知
+        if: failure()
+        env:
+          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_NOTIFY_TOKEN }}
+        run: |
+          python3 scripts/notify_line.py \
+            --type error \
+            --message "アナリティクス収集に失敗しました。"
