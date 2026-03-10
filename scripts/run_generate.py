@@ -11,6 +11,63 @@ import subprocess
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
+def wrap_poem(text, max_lines=5):
+    """句読点・意味の切れ目で詩を自動改行（2〜5行）"""
+    # すでに改行がある場合はそのまま使う
+    if "\n" in text:
+        lines = text.split("\n")
+        if 2 <= len(lines) <= max_lines:
+            return lines
+
+    # 句読点の後ろで分割候補を作る
+    segments = []
+    buf = ""
+    for ch in text:
+        buf += ch
+        if ch in "。、…―！？":
+            segments.append(buf)
+            buf = ""
+    if buf:
+        segments.append(buf)
+
+    # 句読点なしの場合は文字数で均等分割
+    if len(segments) <= 1:
+        n = len(text)
+        num_lines = min(max_lines, max(2, round(n / 10)))
+        chunk = max(1, n // num_lines)
+        segments = [text[i:i+chunk] for i in range(0, n, chunk)]
+
+    # target_lines 行に収める
+    total_chars = len(text)
+    target_lines = min(max_lines, max(2, round(total_chars / 10)))
+
+    while len(segments) > target_lines:
+        min_len = float('inf')
+        min_idx = 0
+        for i in range(len(segments) - 1):
+            combined = len(segments[i]) + len(segments[i+1])
+            if combined < min_len:
+                min_len = combined
+                min_idx = i
+        segments[min_idx] = segments[min_idx] + segments[min_idx+1]
+        segments.pop(min_idx + 1)
+
+    # 1〜2文字だけの行は隣と結合
+    i = 0
+    while i < len(segments):
+        if len(segments[i].strip()) <= 2 and len(segments) > 2:
+            if i == 0:
+                segments[1] = segments[0] + segments[1]
+                segments.pop(0)
+            else:
+                segments[i-1] = segments[i-1] + segments[i]
+                segments.pop(i)
+        else:
+            i += 1
+
+    return segments
+
+
 def measure_rms_lufs(path):
     """ffmpegでRMS/LUFSを測定して返す（dB値）"""
     cmd = [
@@ -19,19 +76,17 @@ def measure_rms_lufs(path):
         "-f", "null", "-"
     ]
     r = subprocess.run(cmd, capture_output=True, text=True)
-    # loudnormのJSON出力からinput_iを取得
     import re
     m = re.search(r'"input_i"\s*:\s*"([-\d.]+)"', r.stderr)
     if m:
         return float(m.group(1))
-    return -14.0  # 取得失敗時はデフォルト
+    return -14.0
 
 
 def calc_volume_factor(measured_lufs, target_lufs):
     """測定値とターゲットの差からvolumeフィルターの倍率を計算"""
     diff = target_lufs - measured_lufs
     factor = 10 ** (diff / 20.0)
-    # 0.05〜2.0の範囲にクランプ（極端な増幅・減衰を防ぐ）
     return max(0.05, min(2.0, factor))
 
 
@@ -45,6 +100,11 @@ def main():
     emotion_tags_str = selection.get("emotion_tags", "")
     emotion_tags = [t.strip() for t in emotion_tags_str.split("・") if t.strip()]
 
+    # 詩を自動改行（2〜5行）
+    poem_lines = wrap_poem(poem)
+    poem_wrapped = "\n".join(poem_lines)
+    print(f"詩（改行後）:\n{poem_wrapped}", flush=True)
+
     # 動画素材をDriveからダウンロード
     bg_path = download_video_asset(video_id)
 
@@ -55,7 +115,7 @@ def main():
     print(f"動画生成開始: {filter_name} / {emotion_tags}", flush=True)
     from generate import generate
     success = generate(
-        text         = poem,
+        text         = poem_wrapped,
         bg_path      = bg_path,
         filter_name  = filter_name,
         emotion_tags = emotion_tags,
@@ -80,14 +140,16 @@ def main():
     # BGM + 環境音を動画に合成
     merge_audio(output_path_silent, bgm_path, se_paths, output_path)
 
-    # サムネイル抽出
-    extract_thumbnail(output_path, thumbnail_path, poem)
+    # サムネイル抽出（改行後の1行目を使用）
+    extract_thumbnail(output_path, thumbnail_path, poem_wrapped)
 
     video_url = output_path
     print(f"success=true")
     print(f"video_path={output_path}")
     print(f"thumbnail_path={thumbnail_path}")
     print(f"video_url={video_url}")
+    # YouTube投稿タイトル用に1行目を出力
+    print(f"poem_first_line={poem_lines[0]}")
 
     with open(os.environ.get("GITHUB_ENV", "/dev/null"), "a") as f:
         f.write(f"VIDEO_URL={video_url}\n")
@@ -104,11 +166,10 @@ def merge_audio(video_path, bgm_path, se_paths, output_path, video_duration=20.0
 
     fade_out_start = video_duration - 2.0
 
-    # 入力ファイルリストとフィルターを動的に構築
     inputs = ["-i", video_path]
     filter_parts = []
     audio_labels = []
-    input_idx = 1  # 0は映像
+    input_idx = 1
 
     # BGM
     if bgm_path and os.path.exists(bgm_path):
@@ -145,13 +206,11 @@ def merge_audio(video_path, bgm_path, se_paths, output_path, video_duration=20.0
         audio_labels.append(f"[{label}]")
         input_idx += 1
 
-    # 音声がひとつもない場合はそのままコピー
     if not audio_labels:
         shutil.copy(video_path, output_path)
         print("音声素材なし・動画をそのまま使用", flush=True)
         return
 
-    # amixで合成
     n = len(audio_labels)
     mix_inputs = "".join(audio_labels)
     filter_complex = ";".join(filter_parts) + f";{mix_inputs}amix=inputs={n}:duration=first:normalize=0[aout]"
@@ -271,7 +330,6 @@ def download_se(spreadsheet_id, creds_json_str, emotion_tags):
             print("環境音が登録されていません", flush=True)
             return []
 
-        # 感情タグとのマッチングでスコアリング
         scored = []
         for row in rows[1:]:
             if len(row) < 2 or not row[1]:
@@ -286,7 +344,6 @@ def download_se(spreadsheet_id, creds_json_str, emotion_tags):
 
         scored.sort(key=lambda x: (-x["score"], x["use_count"]))
 
-        # 上位2本をダウンロード
         se_paths = []
         for se in scored[:2]:
             ext = os.path.splitext(se["file_name"])[1]
