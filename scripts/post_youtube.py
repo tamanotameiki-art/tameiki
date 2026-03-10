@@ -89,7 +89,8 @@ def main():
         print(f"エンドスクリーン設定エラー（スキップ）: {e}", flush=True)
 
     print(f"video_id={video_id}")
-
+    
+    print(f"youtube_url=https://youtu.be/{video_id}")
 
 def set_end_screen(youtube, video_id):
     """エンドスクリーン：チャンネル登録ボタン + おすすめ動画"""
