@@ -10,12 +10,13 @@ import json
 import requests
 from datetime import datetime, timezone, timedelta
 from google.oauth2.service_account import Credentials
+import google.oauth2.credentials
+from googleapiclient.discovery import build
 import gspread
 
 # ── 定数 ──────────────────────────────────────────────
 JST = timezone(timedelta(hours=9))
 SPREADSHEET_ID = os.environ["SPREADSHEET_ID"]
-YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 YOUTUBE_CHANNEL_ID = "UCE8QDag3lHM80xIyEGe9_5w"
 INSTAGRAM_ACCESS_TOKEN = os.environ["INSTAGRAM_ACCESS_TOKEN"]
 MAX_VIDEOS = 30
@@ -43,9 +44,27 @@ def get_sheet():
     gc = gspread.authorize(creds)
     return gc.open_by_key(SPREADSHEET_ID)
 
+# ── YouTube クライアント作成 ──────────────────────────
+def get_youtube_client():
+    creds_json = json.loads(os.environ["YOUTUBE_CREDENTIALS"])
+    creds = google.oauth2.credentials.Credentials(
+        token         = creds_json.get("token"),
+        refresh_token = creds_json.get("refresh_token"),
+        token_uri     = "https://oauth2.googleapis.com/token",
+        client_id     = creds_json.get("client_id"),
+        client_secret = creds_json.get("client_secret"),
+    )
+    return build("youtube", "v3", credentials=creds)
+
 # ── ヘッダー確認・自動追加 ────────────────────────────
 def ensure_headers(sheet):
     headers = sheet.row_values(1)
+    # シートの列数を確認・拡張
+    current_cols = sheet.col_count
+    needed_cols = len(headers) + len(REQUIRED_COLUMNS)
+    if needed_cols > current_cols:
+        sheet.add_cols(needed_cols - current_cols)
+        print(f"[Sheet] 列を{needed_cols - current_cols}列追加しました")
     for col_name in REQUIRED_COLUMNS:
         if col_name not in headers:
             next_col = len(headers) + 1
@@ -55,36 +74,24 @@ def ensure_headers(sheet):
     return headers
 
 # ── YouTube: 直近N本の動画IDを取得 ────────────────────
-def get_recent_video_ids(n=MAX_VIDEOS):
-    url = "https://www.googleapis.com/youtube/v3/search"
-    params = {
-        "key": YOUTUBE_API_KEY,
-        "channelId": YOUTUBE_CHANNEL_ID,
-        "part": "id",
-        "order": "date",
-        "maxResults": n,
-        "type": "video",
-    }
-    res = requests.get(url, params=params).json()
-    if "error" in res:
-        print(f"[YouTube] search error: {res['error']}")
-        return []
+def get_recent_video_ids(youtube, n=MAX_VIDEOS):
+    res = youtube.search().list(
+        channelId=YOUTUBE_CHANNEL_ID,
+        part="id",
+        order="date",
+        maxResults=n,
+        type="video",
+    ).execute()
     return [item["id"]["videoId"] for item in res.get("items", [])]
 
 # ── YouTube: 動画の統計情報を取得 ─────────────────────
-def get_video_stats(video_ids):
+def get_video_stats(youtube, video_ids):
     if not video_ids:
         return {}
-    url = "https://www.googleapis.com/youtube/v3/videos"
-    params = {
-        "key": YOUTUBE_API_KEY,
-        "id": ",".join(video_ids),
-        "part": "statistics,snippet",
-    }
-    res = requests.get(url, params=params).json()
-    if "error" in res:
-        print(f"[YouTube] videos error: {res['error']}")
-        return {}
+    res = youtube.videos().list(
+        id=",".join(video_ids),
+        part="statistics,snippet",
+    ).execute()
     stats = {}
     for item in res.get("items", []):
         vid = item["id"]
@@ -228,9 +235,10 @@ def main():
 
     # YouTube
     print("\n--- YouTube ---")
-    video_ids = get_recent_video_ids(MAX_VIDEOS)
+    youtube = get_youtube_client()
+    video_ids = get_recent_video_ids(youtube, MAX_VIDEOS)
     print(f"動画ID取得: {len(video_ids)}本")
-    yt_stats = get_video_stats(video_ids)
+    yt_stats = get_video_stats(youtube, video_ids)
     print(f"統計取得: {len(yt_stats)}本")
     for vid, s in list(yt_stats.items())[:3]:
         print(f"  {s['title'][:30]}: 再生{s['views']} いいね{s['likes']} コメント{s['comments']}")
