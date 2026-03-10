@@ -49,7 +49,7 @@ jobs:
           pip install \
             numpy pillow \
             moviepy \
-            requests \
+            requests requests-oauthlib \
             google-auth google-auth-oauthlib google-api-python-client \
             tweepy \
             pyluach \
@@ -128,6 +128,21 @@ jobs:
           python3 scripts/post_youtube.py 2>&1 | tee /tmp/post_youtube_log.txt
           grep "^[a-zA-Z_]*=" /tmp/post_youtube_log.txt >> $GITHUB_OUTPUT || true
 
+      - name: Xに投稿
+        if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
+        id: post_x
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+          THUMBNAIL_PATH: ${{ steps.generate.outputs.thumbnail_path }}
+          CAPTION: ${{ steps.captions.outputs.x_caption }}
+          YOUTUBE_URL: ${{ steps.post_youtube.outputs.youtube_url }}
+        run: |
+          python3 scripts/post_x.py 2>&1 | tee /tmp/post_x_log.txt
+          grep "^[a-zA-Z_]*=" /tmp/post_x_log.txt >> $GITHUB_OUTPUT || true
+
 
       - name: Instagramに投稿
         if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
@@ -180,8 +195,8 @@ jobs:
           SELECTION: ${{ steps.selection.outputs.selection_json }}
           POST_IDS: |
             {
-
               "youtube":   "${{ steps.post_youtube.outputs.video_id }}",
+              "x":         "${{ steps.post_x.outputs.post_id }}",
               "instagram": "${{ steps.post_instagram.outputs.media_id }}",
               "pinterest": "${{ steps.post_pinterest.outputs.pin_id }}"
             }
