@@ -53,7 +53,7 @@ YouTubeいいね数 / YouTubeコメント数 / Instagramいいね数 / Instagram
 - collect_analytics.py: YouTube・Instagram反応数収集（直近30本・YOUTUBE_API_KEY使用）
 - generate_captions.py: キャプション生成
 - generate_images.py: 画像生成
-- run_generate.py: メイン生成スクリプト
+- run_generate.py: メイン生成スクリプト（poem_wrappedの出力確認が必要→下記注意事項参照）
 - bgm_mastering.py: BGMマスタリング
 
 ## 完了済みタスク
@@ -64,6 +64,22 @@ YouTubeいいね数 / YouTubeコメント数 / Instagramいいね数 / Instagram
 - collect_analytics.py作成・動作確認完了
 - スプレッドシート投稿履歴シートに反応数列を自動追加
 - daily_post.ymlの重複アナリティクスジョブを削除・整理済み
+
+## 注意事項・要確認項目
+
+### run_generate.py — poem_wrappedの出力確認
+daily_post.ymlはsteps.generate.outputs.poem_wrappedを参照している。
+run_generate.pyのmain()内に以下の出力があるか確認すること。なければ追加が必要。
+print(f"poem_wrapped={poem_wrapped}")
+print(f"poem_first_line={poem_lines[0]}")
+
+### 詩のストックが少ない
+現在12本しかない。毎日1本投稿すると約12日で尽きる。
+早めに30〜60本追加登録しておくと安心。
+
+### ローカルテスト時の注意
+post_x.pyはrequests-oauthlibを使用。ローカルでテストする場合は以下が必要。
+pip install requests-oauthlib
 
 ## 未完了タスク（優先順）
 
