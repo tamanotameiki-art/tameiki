@@ -18,14 +18,14 @@ from easing import ease_out, ease_io, ease_organic, clamp, random_jitter
 def calc_layout(lines):
     """
     行数・文字数からフォントサイズ・字間・行間を自動計算。
-    SNS安全エリアを考慮。詩的な余白を最優先。
+    横幅は画面の3/4を積極的に使用。詩を大きく見せることを優先。
     """
     num_lines  = len(lines)
     max_chars  = max(len(l) for l in lines)
 
-    # 安全エリア
+    # 安全エリア（縦は余裕を持たせ・横は3/4まで使う）
     usable_h = H * (SAFE_BOTTOM - SAFE_TOP) * 0.90
-    usable_w = W * (SAFE_RIGHT  - SAFE_LEFT) * 0.88
+    usable_w = W * (SAFE_RIGHT  - SAFE_LEFT) * 0.75
 
     # 文字サイズ（文字数が多いほど小さく）
     base_size = max(34, min(56, int(560 / max(max_chars, 6))))
@@ -56,7 +56,7 @@ def calc_layout(lines):
     # 特例チェック：それでも収まらない場合は特例レイアウト
     total_h_final = (max_chars - 1) * char_gap + base_size
     total_w_final = (num_lines  - 1) * line_gap + base_size
-    use_extended = total_h_final > H * 0.85 or total_w_final > W * 0.90
+    use_extended = total_h_final > H * 0.85 or total_w_final > W * 0.75
 
     return base_size, char_gap, line_gap, use_extended
 
