@@ -427,7 +427,7 @@ footer p {
   transition:color .2s;
 }
 .modal-close:hover { color:var(--cream); }
-#modal { position:fixed; } /* already fixed but reset for absolute child */
+#modal { position:fixed; }
 
 @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
 @keyframes riseIn  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
@@ -504,7 +504,7 @@ footer p {
 <!-- SNSリンク -->
 <section id="connect">
   <h2 class="connect-title">フォローする</h2>
-  <p class="connect-sub">毎日21:30 更新</p>
+  <p class="connect-sub">毎日21:00 更新</p>
   <div class="sns-links">
     <a class="sns-link" href="https://x.com/tamanotameiki" target="_blank">
       <span class="sns-icon">𝕏</span> X（Twitter）
@@ -518,6 +518,9 @@ footer p {
     <a class="sns-link" href="https://www.tiktok.com/@tamanotameiki" target="_blank">
       <span class="sns-icon">♪</span> TikTok
     </a>
+    <a class="sns-link" href="https://jp.pinterest.com/tamanotameiki/_created/" target="_blank">
+      <span class="sns-icon">𝙿</span> Pinterest
+    </a>
   </div>
 </section>
 
@@ -527,7 +530,7 @@ footer p {
     BGMのご提供・コラボレーション<br>
     その他のお問い合わせ
   </p>
-  <a class="contact-email" href="/cdn-cgi/l/email-protection#137a7d757c5367727e727a787a3d707c7e"><span class="__cf_email__" data-cfemail="a7cec9c1c8e7d3c6cac6ceccce89c4c8ca">[email&#160;protected]</span></a>
+  <a class="contact-email" href="mailto:tamanotameiki@gmail.com">tamanotameiki@gmail.com</a>
 </section>
 
 <!-- フッター -->
@@ -549,12 +552,11 @@ footer p {
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 // ===== 設定 =====
-// スプレッドシートをCSVで公開したURL（Google Sheets → ファイル → ウェブに公開 → CSV）
 const SHEET_HISTORY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdGWWyI8Vnq6rxlitXnemaCLCqRUOcO_ZcPhAfDOzC-SH9zIIr7nRMRAq0De6jL0Z3_BZQ5ljtd2Py/pub?gid=763442013&single=true&output=csv";
 const CACHE_KEY  = "tameiki_archive_v2";
-const CACHE_TTL  = 3600 * 1000; // 1時間
+const CACHE_TTL  = 3600 * 1000;
 
 // ===== ローディング終了 =====
 document.addEventListener("DOMContentLoaded", () => {
@@ -606,7 +608,6 @@ let allPosts = [];
 let displayCount = 9;
 
 async function fetchHistory() {
-  // キャッシュチェック
   try {
     const cached = sessionStorage.getItem(CACHE_KEY);
     if (cached) {
@@ -624,7 +625,7 @@ async function fetchHistory() {
       const obj = {};
       headers.forEach((h, i) => obj[h] = row[i] || "");
       return obj;
-    }).filter(p => p["詩"]).reverse(); // 新しい順
+    }).filter(p => p["詩"]).reverse();
 
     sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data: posts, ts: Date.now() }));
     return posts;
@@ -662,14 +663,12 @@ function parseCSV(text) {
 function renderBest(posts) {
   if (!posts.length) return;
 
-  // 全SNS再生数合計が最大の投稿を探す
   const best = posts.slice(0, 30).reduce((best, post) => {
     const plays = (parseInt(post["X再生数"]||0) + parseInt(post["YouTube再生数"]||0) + parseInt(post["Instagram再生数"]||0));
     const bestPlays = (parseInt(best["X再生数"]||0) + parseInt(best["YouTube再生数"]||0) + parseInt(best["Instagram再生数"]||0));
     return plays > bestPlays ? post : best;
   }, posts[0]);
 
-  // YouTube動画埋め込み
   const ytId = best["YouTube投稿ID"];
   const videoWrap = document.getElementById("bestVideoWrap");
   if (ytId) {
@@ -685,7 +684,6 @@ function renderBest(posts) {
     総再生数：${totalPlays}
   `;
 
-  // リビールのトリガー
   setTimeout(() => {
     document.getElementById("bestPoem").classList.add("visible");
     document.getElementById("bestVideoWrap").classList.add("visible");
@@ -728,13 +726,11 @@ function renderArchive(posts, from, to) {
     card.addEventListener("click", () => openModal(post));
     grid.appendChild(card);
 
-    // リビール
     requestAnimationFrame(() => {
       revealObserver.observe(card);
     });
   });
 
-  // もっと見るボタン
   document.getElementById("loadMoreBtn").style.display =
     to >= posts.length ? "none" : "inline-block";
 }
@@ -774,7 +770,6 @@ function openModal(post) {
 function closeModal() {
   document.getElementById("modal").classList.remove("open");
   document.body.style.overflow = "";
-  // 動画停止
   const iframe = document.querySelector("#modal iframe");
   if (iframe) iframe.src = iframe.src;
 }
@@ -782,4 +777,16 @@ function closeModal() {
 document.getElementById("modal").addEventListener("click", e => {
   if (e.target === document.getElementById("modal")) closeModal();
 });
-document.addEventListener("keydown", 
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeModal();
+});
+
+// ===== 初期化 =====
+(async () => {
+  allPosts = await fetchHistory();
+  renderBest(allPosts);
+  renderArchive(allPosts, 0, displayCount);
+})();
+</script>
+</body>
+</html>
