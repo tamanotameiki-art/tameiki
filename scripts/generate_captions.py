@@ -44,17 +44,19 @@ def generate_captions(poem, emotion_tags, conditions, corpus):
 - NGワード: 「一緒に」「繋がりたい」「刺さった」「泣ける」「エモい」「共感」「お疲れ様」
 
 【各SNSの仕様】
-- X: 10〜30文字・問いかけ形式または断言・余白を残す
+- X: 10〜30文字・問いかけ形式または断言・余白を残す（YouTubeのURLを後で付加するので短めに）
 - Instagram: 100〜200文字・情緒的・詩の続きのような一段落
 - YouTube: 50〜100文字・検索キーワードを自然に含む（「詩」「言葉」「朗読」など）
 - TikTok: 20〜40文字・静かに語りかける・夜感がある
+- Pinterest: 30〜60文字・詩の余韻・保存したくなるような静かな言葉
 
 必ず以下のJSON形式のみで回答してください（説明文不要）：
 {{
   "x": "",
   "instagram": "",
   "youtube": "",
-  "tiktok": ""
+  "tiktok": "",
+  "pinterest": ""
 }}
 """
 
@@ -88,10 +90,11 @@ def get_fallback_captions(poem):
     """Claude API失敗時のフォールバック（ルールベース）"""
     first_line = poem.split("\n")[0][:20]
     return {
-        "x":          f"{first_line}",
-        "instagram":  f"{poem}",
+        "x":          first_line,
+        "instagram":  poem,
         "youtube":    f"心に響く詩｜たまのためいき。{first_line}",
-        "tiktok":     f"{first_line}",
+        "tiktok":     first_line,
+        "pinterest":  first_line,
     }
 
 
@@ -117,10 +120,11 @@ def main():
 
     captions = generate_captions(poem, emotion_tags, conditions, corpus)
 
-    print(f"x_caption={captions['x']}")
-    print(f"instagram_caption={captions['instagram']}")
-    print(f"youtube_caption={captions['youtube']}")
-    print(f"tiktok_caption={captions['tiktok']}")
+    print(f"x_caption={captions.get('x', '')}")
+    print(f"instagram_caption={captions.get('instagram', '')}")
+    print(f"youtube_caption={captions.get('youtube', '')}")
+    print(f"tiktok_caption={captions.get('tiktok', '')}")
+    print(f"pinterest_caption={captions.get('pinterest', '')}")
 
     print("\n--- 生成されたキャプション ---", flush=True)
     for platform, text in captions.items():
