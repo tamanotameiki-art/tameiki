@@ -43,9 +43,7 @@ header {
   display:flex; align-items:center; justify-content:space-between;
   padding:0 1.4rem;
 }
-.header-logo {
-  font-size:.78rem; letter-spacing:.3em; color:var(--gold);
-}
+.header-logo { font-size:.78rem; letter-spacing:.3em; color:var(--gold); }
 .header-status {
   display:flex; align-items:center; gap:1.4rem;
   font-family:var(--mono); font-size:.65rem; color:var(--text-s);
@@ -88,11 +86,7 @@ aside {
 .nav-icon { font-size:.85rem; width:1rem; text-align:center; }
 
 /* ===== メインエリア ===== */
-main {
-  grid-area:main;
-  overflow-y:auto;
-  padding:1.8rem 2rem;
-}
+main { grid-area:main; overflow-y:auto; padding:1.8rem 2rem; }
 .page { display:none; }
 .page.active { display:block; }
 
@@ -123,14 +117,8 @@ main {
   font-size:.6rem; letter-spacing:.3em; color:var(--text-s);
   text-transform:uppercase; margin-bottom:.8rem;
 }
-.card-value {
-  font-family:var(--mono); font-size:1.6rem;
-  color:var(--gold); letter-spacing:.05em;
-}
-.card-sub {
-  font-size:.62rem; color:var(--text-s);
-  margin-top:.3rem; letter-spacing:.15em;
-}
+.card-value { font-family:var(--mono); font-size:1.6rem; color:var(--gold); letter-spacing:.05em; }
+.card-sub { font-size:.62rem; color:var(--text-s); margin-top:.3rem; letter-spacing:.15em; }
 
 /* ===== 今日の投稿プレビュー ===== */
 .today-preview {
@@ -144,9 +132,7 @@ main {
   border-radius:3px;
   display:flex; align-items:center; justify-content:center;
   font-size:.58rem; color:var(--text-s);
-  overflow:hidden;
 }
-.preview-video video { width:100%; height:100%; object-fit:cover; }
 .preview-details { padding:.2rem 0; }
 .preview-poem {
   font-size:.82rem; line-height:2;
@@ -161,7 +147,6 @@ main {
   border:1px solid var(--border);
   border-radius:2px; color:var(--text-s);
 }
-.tag.match { border-color:rgba(90,173,120,.4); color:var(--green); }
 
 /* ===== グラフ ===== */
 .chart-wrap {
@@ -184,10 +169,7 @@ canvas { max-width:100%; }
   overflow-x:auto;
   margin-bottom:1.4rem;
 }
-table {
-  width:100%; border-collapse:collapse;
-  font-size:.72rem;
-}
+table { width:100%; border-collapse:collapse; font-size:.72rem; }
 th {
   font-family:var(--mono); font-size:.58rem;
   color:var(--text-s); letter-spacing:.2em;
@@ -203,8 +185,6 @@ td {
 tr:last-child td { border-bottom:none; }
 tr:hover td { background:rgba(200,140,80,.03); }
 .td-mono { font-family:var(--mono); font-size:.65rem; }
-.td-good { color:var(--green); }
-.td-bad  { color:var(--red); }
 
 /* ===== バッジ ===== */
 .badge {
@@ -213,9 +193,9 @@ tr:hover td { background:rgba(200,140,80,.03); }
   padding:.15rem .5rem; border-radius:2px;
   letter-spacing:.15em;
 }
-.badge-ok   { background:rgba(90,173,120,.15); color:var(--green); }
-.badge-warn { background:rgba(200,88,72,.15);  color:var(--red); }
-.badge-wait { background:rgba(88,128,184,.15); color:var(--blue); }
+.badge-ok   { background:rgba(90,173,120,.15);  color:var(--green); }
+.badge-warn { background:rgba(200,88,72,.15);   color:var(--red); }
+.badge-wait { background:rgba(88,128,184,.15);  color:var(--blue); }
 
 /* ===== ボタン ===== */
 .btn {
@@ -224,7 +204,7 @@ tr:hover td { background:rgba(200,140,80,.03); }
   font-family:'Shippori Mincho',serif;
   font-size:.7rem; letter-spacing:.2em;
   cursor:pointer; border-radius:2px;
-  transition:all .2s;
+  transition:all .2s; border:none;
 }
 .btn-gold {
   background:rgba(232,170,80,.1);
@@ -243,6 +223,17 @@ tr:hover td { background:rgba(200,140,80,.03); }
   border:1px solid rgba(192,88,72,.3);
   color:var(--red);
 }
+
+/* ===== ステータス表示 ===== */
+.workflow-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.75rem 0;
+  border-bottom:1px solid rgba(200,140,80,.05);
+}
+.workflow-row:last-child { border-bottom:none; }
+.workflow-name { font-size:.75rem; letter-spacing:.12em; }
+.workflow-desc { font-size:.6rem; color:var(--text-s); margin-top:.2rem; }
+.workflow-time { font-family:var(--mono); font-size:.62rem; color:var(--text-s); }
 
 /* ===== AIチャット ===== */
 #chat-toggle {
@@ -268,9 +259,7 @@ tr:hover td { background:rgba(200,140,80,.03); }
   transition:all .28s cubic-bezier(.22,1,.36,1);
   box-shadow:0 20px 60px rgba(0,0,0,.6);
 }
-#chat-panel.open {
-  transform:translateY(0) scale(1); opacity:1; pointer-events:all;
-}
+#chat-panel.open { transform:translateY(0) scale(1); opacity:1; pointer-events:all; }
 .chat-header {
   padding:.8rem 1rem;
   border-bottom:1px solid var(--border);
@@ -295,11 +284,9 @@ tr:hover td { background:rgba(200,140,80,.03); }
 .msg-user {
   background:rgba(200,140,80,.12);
   border:1px solid rgba(200,140,80,.2);
-  color:var(--cream); align-self:flex-end;
+  color:var(--text); align-self:flex-end;
 }
-.msg-thinking {
-  color:var(--text-s); font-style:italic; font-size:.65rem;
-}
+.msg-thinking { color:var(--text-s); font-style:italic; font-size:.65rem; }
 .chat-input-wrap {
   padding:.7rem;
   border-top:1px solid var(--border);
@@ -327,16 +314,13 @@ tr:hover td { background:rgba(200,140,80,.03); }
 #chat-send:hover { background:rgba(232,170,80,.2); }
 
 /* ===== ログ ===== */
-.log-list {
-  font-family:var(--mono); font-size:.62rem;
-  color:var(--text-s); line-height:2;
-}
+.log-list { font-family:var(--mono); font-size:.62rem; color:var(--text-s); line-height:2; }
 .log-ok   { color:var(--green); }
 .log-err  { color:var(--red); }
 .log-info { color:var(--blue); }
 .log-time { color:rgba(112,80,64,.6); margin-right:.8rem; }
 
-/* ===== セレクト・インプット ===== */
+/* ===== フォーム ===== */
 select, input[type="text"], input[type="time"] {
   background:rgba(200,140,80,.04);
   border:1px solid var(--border);
@@ -355,20 +339,18 @@ select:focus, input:focus { border-color:var(--border2); }
   border-bottom:1px solid rgba(200,140,80,.05);
   gap:1rem;
 }
+.setting-row:last-of-type { border-bottom:none; }
 .setting-label { font-size:.75rem; letter-spacing:.15em; }
 .setting-desc  { font-size:.62rem; color:var(--text-s); margin-top:.2rem; letter-spacing:.1em; }
 
 /* ===== トグル ===== */
-.toggle {
-  position:relative; width:36px; height:20px; cursor:pointer;
-}
+.toggle { position:relative; width:36px; height:20px; cursor:pointer; }
 .toggle input { opacity:0; width:0; height:0; }
 .toggle-slider {
   position:absolute; inset:0;
   background:rgba(200,140,80,.15);
   border:1px solid var(--border);
-  border-radius:20px;
-  transition:all .25s;
+  border-radius:20px; transition:all .25s;
 }
 .toggle-slider::before {
   content:''; position:absolute;
@@ -379,6 +361,22 @@ select:focus, input:focus { border-color:var(--border2); }
 }
 .toggle input:checked + .toggle-slider { background:rgba(90,173,120,.2); border-color:rgba(90,173,120,.4); }
 .toggle input:checked + .toggle-slider::before { transform:translateX(16px); background:var(--green); }
+
+/* ===== 注意バナー ===== */
+.notice {
+  background:rgba(200,88,72,.08);
+  border:1px solid rgba(200,88,72,.2);
+  border-radius:3px; padding:.8rem 1.2rem;
+  font-size:.68rem; color:var(--red);
+  letter-spacing:.1em; margin-bottom:1rem;
+}
+.notice-blue {
+  background:rgba(88,128,184,.08);
+  border:1px solid rgba(88,128,184,.2);
+  border-radius:3px; padding:.8rem 1.2rem;
+  font-size:.68rem; color:var(--blue);
+  letter-spacing:.1em; margin-bottom:1rem;
+}
 </style>
 </head>
 <body>
@@ -389,36 +387,40 @@ select:focus, input:focus { border-color:var(--border2); }
   <div class="header-status">
     <span><span class="status-dot"></span>システム稼働中</span>
     <span id="headerTime">--:--</span>
-    <a href="/" target="_blank" style="color:var(--amber);font-size:.62rem;letter-spacing:.2em;text-decoration:none;">サイトを見る →</a>
+    <a href="https://tamanotameiki-art.github.io/tameiki/" target="_blank"
+       style="color:var(--amber);font-size:.62rem;letter-spacing:.2em;text-decoration:none;">サイトを見る →</a>
   </div>
 </header>
 
 <!-- サイドバー -->
 <aside>
   <p class="nav-section">メイン</p>
-  <div class="nav-item active" onclick="switchPage('home')">
+  <div class="nav-item active" onclick="switchPage('home',this)">
     <span class="nav-icon">◈</span> ホーム
   </div>
-  <div class="nav-item" onclick="switchPage('stats')">
+  <div class="nav-item" onclick="switchPage('stats',this)">
     <span class="nav-icon">〜</span> パフォーマンス
+  </div>
+  <div class="nav-item" onclick="switchPage('workflows',this)">
+    <span class="nav-icon">⟳</span> ワークフロー
   </div>
 
   <p class="nav-section">素材管理</p>
-  <div class="nav-item" onclick="switchPage('poems')">
-    <span class="nav-icon">✦</span> 文字列
+  <div class="nav-item" onclick="switchPage('poems',this)">
+    <span class="nav-icon">✦</span> 詩
   </div>
-  <div class="nav-item" onclick="switchPage('videos')">
+  <div class="nav-item" onclick="switchPage('videos',this)">
     <span class="nav-icon">▣</span> 動画素材
   </div>
-  <div class="nav-item" onclick="switchPage('bgm')">
+  <div class="nav-item" onclick="switchPage('bgm',this)">
     <span class="nav-icon">♩</span> BGM
   </div>
 
   <p class="nav-section">設定</p>
-  <div class="nav-item" onclick="switchPage('settings')">
+  <div class="nav-item" onclick="switchPage('settings',this)">
     <span class="nav-icon">⊙</span> 設定
   </div>
-  <div class="nav-item" onclick="switchPage('logs')">
+  <div class="nav-item" onclick="switchPage('logs',this)">
     <span class="nav-icon">≡</span> ログ
   </div>
 </aside>
@@ -430,9 +432,13 @@ select:focus, input:focus { border-color:var(--border2); }
   <div id="page-home" class="page active">
     <div class="page-title">ホーム</div>
 
-    <!-- 今日の投稿プレビュー -->
+    <div class="notice-blue">
+      ※ データはGoogleスプレッドシートのCSV公開URLから取得しています。スプレッドシートが非公開の場合は表示されません。
+    </div>
+
+    <!-- 今日の投稿予定 -->
     <div class="card" style="margin-bottom:1.4rem;">
-      <div class="card-title">今日の投稿予定 <span id="nextPostTime" style="color:var(--amber);margin-left:.8rem;"></span></div>
+      <div class="card-title">次回投稿予定 <span style="color:var(--amber);margin-left:.8rem;">毎日 21:00 JST</span></div>
       <div class="today-preview">
         <div class="preview-video" id="previewVideo">生成前</div>
         <div class="preview-details">
@@ -440,8 +446,8 @@ select:focus, input:focus { border-color:var(--border2); }
           <div class="preview-tags" id="previewTags"></div>
           <div style="display:flex;gap:.8rem;flex-wrap:wrap;">
             <button class="btn btn-gold" onclick="triggerPost()">今すぐ投稿</button>
-            <button class="btn btn-ghost" onclick="generatePreview()">動画生成のみ</button>
-            <button class="btn btn-danger" onclick="cancelPost()">キャンセル</button>
+            <button class="btn btn-ghost" onclick="generateDryRun()">ドライラン（動画生成のみ）</button>
+            <button class="btn btn-ghost" onclick="triggerAnalytics()">アナリティクス収集</button>
           </div>
         </div>
       </div>
@@ -462,7 +468,7 @@ select:focus, input:focus { border-color:var(--border2); }
       <div class="card">
         <div class="card-title">今週の再生数</div>
         <div class="card-value" id="kpiPlays">—</div>
-        <div class="card-sub">全SNS合計</div>
+        <div class="card-sub">YT+IG合計</div>
       </div>
       <div class="card">
         <div class="card-title">今月の投稿数</div>
@@ -471,24 +477,25 @@ select:focus, input:focus { border-color:var(--border2); }
       </div>
     </div>
 
-    <!-- 直近7日 -->
+    <!-- 直近7日グラフ -->
     <div class="chart-wrap">
-      <div class="chart-title">再生数推移（直近7日）</div>
+      <div class="chart-title">再生数推移（直近7投稿 / YouTube+Instagram）</div>
       <canvas id="chartPlays" height="120"></canvas>
     </div>
 
-    <!-- 直近の投稿 -->
+    <!-- 直近の投稿テーブル -->
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>投稿日時</th>
+            <th>投稿日</th>
             <th>詩</th>
             <th>フィルター</th>
-            <th>X再生</th>
             <th>YT再生</th>
+            <th>YTいいね</th>
             <th>IG再生</th>
-            <th>合計</th>
+            <th>IGいいね</th>
+            <th>収集日</th>
           </tr>
         </thead>
         <tbody id="recentTable"></tbody>
@@ -499,25 +506,131 @@ select:focus, input:focus { border-color:var(--border2); }
   <!-- パフォーマンス -->
   <div id="page-stats" class="page">
     <div class="page-title">パフォーマンス</div>
+    <div class="notice-blue">
+      収集対象：YouTube（再生数・いいね・コメント）/ Instagram（いいね・コメント・インプレッション）<br>
+      X・TikTok・Pinterestは現在収集対象外です。
+    </div>
     <div class="grid-2">
       <div class="chart-wrap">
-        <div class="chart-title">フィルター別 平均再生数</div>
+        <div class="chart-title">フィルター別 YouTube平均再生数</div>
         <canvas id="chartFilter" height="200"></canvas>
       </div>
       <div class="chart-wrap">
-        <div class="chart-title">時間帯別 パフォーマンス</div>
-        <canvas id="chartHour" height="200"></canvas>
+        <div class="chart-title">感情タグ別 Instagram平均いいね数</div>
+        <canvas id="chartEmotion" height="200"></canvas>
       </div>
     </div>
-    <div class="chart-wrap">
-      <div class="chart-title">感情タグ別 傾向</div>
-      <canvas id="chartEmotion" height="100"></canvas>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">YouTube 累計</div>
+        <div id="ytTotal" style="margin-top:.5rem;">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Instagram 累計</div>
+        <div id="igTotal" style="margin-top:.5rem;">—</div>
+      </div>
     </div>
   </div>
 
-  <!-- 文字列 -->
+  <!-- ワークフロー -->
+  <div id="page-workflows" class="page">
+    <div class="page-title">GitHub Actions ワークフロー</div>
+    <div class="notice-blue">
+      GitHub Actions のページで実行履歴・ログを確認できます。<br>
+      <a href="https://github.com/tamanotameiki-art/tameiki/actions" target="_blank"
+         style="color:var(--blue);letter-spacing:.1em;">→ GitHub Actions を開く</a>
+    </div>
+    <div class="card" style="margin-bottom:1.4rem;">
+      <div class="workflow-row">
+        <div>
+          <div class="workflow-name">daily_post.yml</div>
+          <div class="workflow-desc">毎日自動投稿（YouTube → X → Instagram → Pinterest → TikTok）</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="workflow-time">毎日 21:00 JST</div>
+          <span class="badge badge-ok" style="margin-top:.3rem;">稼働中</span>
+        </div>
+      </div>
+      <div class="workflow-row">
+        <div>
+          <div class="workflow-name">collect_analytics.yml</div>
+          <div class="workflow-desc">YouTube・Instagram 反応数を収集してスプレッドシートに記録（YOUTUBE_API_KEY使用）</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="workflow-time">毎日 8:00 JST</div>
+          <span class="badge badge-ok" style="margin-top:.3rem;">稼働中</span>
+        </div>
+      </div>
+      <div class="workflow-row">
+        <div>
+          <div class="workflow-name">refresh_instagram_token.yml</div>
+          <div class="workflow-desc">IGAAトークンを自動リフレッシュしてGitHub Secretsを更新</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="workflow-time">毎月1日 9:00 JST</div>
+          <span class="badge badge-ok" style="margin-top:.3rem;">稼働中</span>
+        </div>
+      </div>
+      <div class="workflow-row">
+        <div>
+          <div class="workflow-name">bgm_mastering.yml</div>
+          <div class="workflow-desc">新規BGMを自動マスタリング（Apps ScriptがDrive監視でトリガー）</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="workflow-time">手動 / 自動トリガー</div>
+          <span class="badge badge-ok" style="margin-top:.3rem;">稼働中</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 手動実行 -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:1rem;">手動実行</div>
+      <div style="display:flex;flex-wrap:wrap;gap:.8rem;">
+        <button class="btn btn-gold" onclick="triggerPost()">今すぐ投稿</button>
+        <button class="btn btn-ghost" onclick="generateDryRun()">ドライラン</button>
+        <button class="btn btn-ghost" onclick="triggerAnalytics()">アナリティクス収集のみ</button>
+      </div>
+      <div id="triggerMsg" style="margin-top:.8rem;font-size:.65rem;color:var(--text-s);"></div>
+    </div>
+
+    <!-- 未解決エラー -->
+    <div class="card" style="margin-top:1.4rem;">
+      <div class="card-title" style="margin-bottom:1rem;">未解決エラー一覧</div>
+      <div class="workflow-row">
+        <div>
+          <div class="workflow-name" style="color:var(--red);">Instagram — 400 Bad Request</div>
+          <div class="workflow-desc">post_instagram.py 投稿時にエラー。Graph API設定を要確認。</div>
+        </div>
+        <span class="badge badge-warn">未解決</span>
+      </div>
+      <div class="workflow-row">
+        <div>
+          <div class="workflow-name" style="color:var(--red);">TikTok — storageQuotaExceeded</div>
+          <div class="workflow-desc">Service AccountのDriveクォータ不足。共有ドライブへの移行が必要。</div>
+        </div>
+        <span class="badge badge-warn">未解決</span>
+      </div>
+      <div class="workflow-row">
+        <div>
+          <div class="workflow-name" style="color:var(--blue);">Pinterest — Standard申請待ち</div>
+          <div class="workflow-desc">Trialアクセスのため投稿API不可。developers.pinterest.comから申請。</div>
+        </div>
+        <span class="badge badge-wait">申請待ち</span>
+      </div>
+      <div class="workflow-row">
+        <div>
+          <div class="workflow-name" style="color:var(--blue);">LINE通知 — 代替手段未定</div>
+          <div class="workflow-desc">LINE Notify終了済み。Gmail API / Discord / Slack Webhookのいずれかに移行予定。</div>
+        </div>
+        <span class="badge badge-wait">検討中</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 詩 -->
   <div id="page-poems" class="page">
-    <div class="page-title">文字列管理</div>
+    <div class="page-title">詩管理</div>
     <div class="grid-3" style="margin-bottom:1.2rem;">
       <div class="card">
         <div class="card-title">未投稿</div>
@@ -532,15 +645,20 @@ select:focus, input:focus { border-color:var(--border2); }
         <div class="card-value" id="poemCountTotal">—</div>
       </div>
     </div>
+    <div id="poemAlert" style="display:none;" class="notice">
+      ⚠ 詩の在庫が10本以下です。早めに追加登録してください。
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>文字列</th>
+            <th>詩</th>
             <th>感情</th>
             <th>季節</th>
             <th>時間</th>
+            <th>天気</th>
             <th>投稿回数</th>
+            <th>最終投稿日</th>
             <th>ステータス</th>
           </tr>
         </thead>
@@ -558,13 +676,16 @@ select:focus, input:focus { border-color:var(--border2); }
         <div class="card-value" id="videoCountActive">—</div>
       </div>
       <div class="card">
-        <div class="card-title">タグ待ち</div>
-        <div class="card-value" id="videoCountPending">—</div>
+        <div class="card-title">無効</div>
+        <div class="card-value" id="videoCountInactive">—</div>
       </div>
       <div class="card">
-        <div class="card-title">使用済み</div>
-        <div class="card-value" id="videoCountUsed">—</div>
+        <div class="card-title">合計</div>
+        <div class="card-value" id="videoCountTotal">—</div>
       </div>
+    </div>
+    <div id="videoAlert" style="display:none;" class="notice">
+      ⚠ 動画素材の有効数が10本以下です。Driveに素材を追加してください。
     </div>
     <div class="table-wrap">
       <table>
@@ -575,6 +696,7 @@ select:focus, input:focus { border-color:var(--border2); }
             <th>季節</th>
             <th>場所</th>
             <th>使用回数</th>
+            <th>最終使用日</th>
             <th>ステータス</th>
           </tr>
         </thead>
@@ -607,18 +729,22 @@ select:focus, input:focus { border-color:var(--border2); }
   <!-- 設定 -->
   <div id="page-settings" class="page">
     <div class="page-title">設定</div>
+    <div class="notice-blue">
+      設定変更はGoogleスプレッドシートの「設定シート」に直接反映します。<br>
+      GitHub Actionsのcron設定はリポジトリで変更してください。
+    </div>
     <div class="card">
       <div class="setting-row">
         <div>
           <div class="setting-label">投稿時刻</div>
-          <div class="setting-desc">毎日の自動投稿時刻（JST）</div>
+          <div class="setting-desc">現在：毎日 21:00 JST（cron: 0 12 * * *）</div>
         </div>
-        <input type="time" id="settingTime" value="21:30">
+        <input type="time" id="settingTime" value="21:00">
       </div>
       <div class="setting-row">
         <div>
           <div class="setting-label">フィルター固定</div>
-          <div class="setting-desc">空欄の場合は自動選択</div>
+          <div class="setting-desc">空欄の場合は85%スコア選択・15%ランダム</div>
         </div>
         <select id="settingFilter">
           <option value="">自動</option>
@@ -633,30 +759,53 @@ select:focus, input:focus { border-color:var(--border2); }
       </div>
       <div class="setting-row">
         <div>
-          <div class="setting-label">X（Twitter）投稿</div>
-        </div>
-        <label class="toggle"><input type="checkbox" id="settingX" checked><div class="toggle-slider"></div></label>
-      </div>
-      <div class="setting-row">
-        <div>
           <div class="setting-label">YouTube投稿</div>
+          <div class="setting-desc">OAuth2 / youtube.upload スコープ</div>
         </div>
         <label class="toggle"><input type="checkbox" id="settingYT" checked><div class="toggle-slider"></div></label>
       </div>
       <div class="setting-row">
         <div>
-          <div class="setting-label">Instagram投稿</div>
+          <div class="setting-label">X（Twitter）投稿</div>
+          <div class="setting-desc">v2 / 月500投稿まで無料</div>
         </div>
-        <label class="toggle"><input type="checkbox" id="settingIG" checked><div class="toggle-slider"></div></label>
+        <label class="toggle"><input type="checkbox" id="settingX" checked><div class="toggle-slider"></div></label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Instagram投稿</div>
+          <div class="setting-desc">現在 400 Bad Request エラーあり</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="settingIG"><div class="toggle-slider"></div></label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Pinterest投稿</div>
+          <div class="setting-desc">Standard申請待ち（現在Trialアクセス）</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="settingPIN"><div class="toggle-slider"></div></label>
       </div>
       <div class="setting-row">
         <div>
           <div class="setting-label">TikTok準備</div>
+          <div class="setting-desc">storageQuotaExceeded エラーあり</div>
         </div>
-        <label class="toggle"><input type="checkbox" id="settingTT" checked><div class="toggle-slider"></div></label>
+        <label class="toggle"><input type="checkbox" id="settingTT"><div class="toggle-slider"></div></label>
       </div>
       <div style="margin-top:1.2rem;">
         <button class="btn btn-gold" onclick="saveSettings()">保存する</button>
+      </div>
+    </div>
+
+    <!-- リンク集 -->
+    <div class="card" style="margin-top:1.4rem;">
+      <div class="card-title" style="margin-bottom:1rem;">クイックリンク</div>
+      <div style="display:flex;flex-direction:column;gap:.6rem;font-size:.72rem;letter-spacing:.1em;">
+        <a href="https://docs.google.com/spreadsheets/d/1uFyB3fP039bOwdglmlVPozQZtjGHxGeIFx90rG02bvM/edit" target="_blank" style="color:var(--blue);">スプレッドシート（編集）</a>
+        <a href="https://github.com/tamanotameiki-art/tameiki/actions" target="_blank" style="color:var(--blue);">GitHub Actions</a>
+        <a href="https://github.com/tamanotameiki-art/tameiki" target="_blank" style="color:var(--blue);">GitHubリポジトリ</a>
+        <a href="https://tamanotameiki-art.github.io/tameiki/" target="_blank" style="color:var(--blue);">公式サイト</a>
+        <a href="https://developers.pinterest.com/" target="_blank" style="color:var(--amber);">Pinterest Standard申請（要対応）</a>
       </div>
     </div>
   </div>
@@ -664,6 +813,10 @@ select:focus, input:focus { border-color:var(--border2); }
   <!-- ログ -->
   <div id="page-logs" class="page">
     <div class="page-title">実行ログ</div>
+    <div class="notice-blue">
+      詳細ログはGitHub Actionsの実行履歴で確認してください。<br>
+      <a href="https://github.com/tamanotameiki-art/tameiki/actions" target="_blank" style="color:var(--blue);">→ GitHub Actions を開く</a>
+    </div>
     <div class="card">
       <div class="log-list" id="logList">読み込み中…</div>
     </div>
@@ -678,59 +831,65 @@ select:focus, input:focus { border-color:var(--border2); }
 <div id="chat-panel">
   <div class="chat-header">
     <span class="status-dot"></span>
-    AIプロデューサー
+    クロちゃん（AIアシスタント）
   </div>
   <div class="chat-messages" id="chatMessages">
     <div class="msg msg-ai">
-      こんにちは。システムの状況を確認しています。<br>
-      何か相談がありましたらどうぞ。
+      こんにちは、ご主人様。システムの状況を確認しています。何か相談がありましたらどうぞ。
     </div>
   </div>
   <div class="chat-input-wrap">
-    <input id="chat-input" type="text" placeholder="例：今日の詩のタグを確認して" onkeydown="if(event.key==='Enter')sendChat()">
+    <input id="chat-input" type="text" placeholder="例：今日の詩のタグを確認して"
+           onkeydown="if(event.key==='Enter')sendChat()">
     <button id="chat-send" onclick="sendChat()">送信</button>
   </div>
 </div>
 
 <script>
 // ===== 設定 =====
-const SPREADSHEET_ID  = "1uFyB3fP039bOwdglmlVPozQZtjGHxGeIFx90rG02bvM";
-const GITHUB_TOKEN    = ""; // Personal Access Tokenをここに（本番はサーバーサイドで管理）
-const GITHUB_REPO     = "tamanotameiki-art/tameiki";
-const CSV_BASE        = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=`;
+const SPREADSHEET_ID = "1uFyB3fP039bOwdglmlVPozQZtjGHxGeIFx90rG02bvM";
+const GITHUB_REPO    = "tamanotameiki-art/tameiki";
+let   GITHUB_TOKEN   = localStorage.getItem("gh_token") || "";
+
+// スプレッドシートのGID（公開CSVから取得）
+// 投稿履歴シートのGIDが確認できたら下記を更新してください
 const GID = {
-  history: "0",
-  poems:   "1",
-  videos:  "2",
-  bgm:     "3",
+  history: "763442013", // 投稿履歴（CSV公開URLより）
+  poems:   "0",         // 文字列シート（要確認）
+  videos:  "1",         // 動画素材シート（要確認）
+  bgm:     "2",         // BGMシート（要確認）
 };
+const CSV_BASE = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=`;
 
 // ===== 状態 =====
 let chatHistory = [];
-let allData     = { history:[], poems:[], videos:[], bgm:[] };
+let allData = { history:[], poems:[], videos:[], bgm:[] };
 
 // ===== 時計 =====
 setInterval(() => {
-  const now = new Date();
   document.getElementById("headerTime").textContent =
-    now.toLocaleTimeString("ja-JP", {hour:"2-digit", minute:"2-digit"});
+    new Date().toLocaleTimeString("ja-JP", {hour:"2-digit", minute:"2-digit"});
 }, 1000);
 
 // ===== ページ切り替え =====
-function switchPage(name) {
+function switchPage(name, el) {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
   document.getElementById(`page-${name}`).classList.add("active");
-  event.currentTarget.classList.add("active");
+  if (el) el.classList.add("active");
   loadPageData(name);
 }
 
 // ===== CSV取得 =====
 async function fetchCSV(gid) {
-  const url = CSV_BASE + gid;
-  const res = await fetch(url);
-  const text = await res.text();
-  return parseCSV(text);
+  try {
+    const res  = await fetch(CSV_BASE + gid);
+    const text = await res.text();
+    return parseCSV(text);
+  } catch(e) {
+    console.warn("CSV取得失敗:", gid, e);
+    return [];
+  }
 }
 
 function parseCSV(text) {
@@ -742,51 +901,46 @@ function parseCSV(text) {
       if (line[i] === '"') {
         if (inQ && line[i+1] === '"') { cell += '"'; i++; }
         else inQ = !inQ;
-      } else if (line[i] === ',' && !inQ) {
-        row.push(cell); cell = "";
-      } else { cell += line[i]; }
+      } else if (line[i] === ',' && !inQ) { row.push(cell); cell = ""; }
+      else cell += line[i];
     }
-    row.push(cell);
-    rows.push(row);
+    row.push(cell); rows.push(row);
   }
   return rows;
 }
 
 function csvToObjects(rows) {
+  if (rows.length < 2) return [];
   const [headers, ...data] = rows;
   return data.map(row => {
     const obj = {};
-    headers.forEach((h, i) => obj[h] = row[i] || "");
+    headers.forEach((h, i) => obj[h.trim()] = (row[i] || "").trim());
     return obj;
   });
 }
 
 // ===== データ読み込み =====
 async function loadAll() {
-  try {
-    const [histRows, poemRows, videoRows, bgmRows] = await Promise.all([
-      fetchCSV(GID.history),
-      fetchCSV(GID.poems),
-      fetchCSV(GID.videos),
-      fetchCSV(GID.bgm),
-    ]);
-    allData.history = csvToObjects(histRows).reverse();
-    allData.poems   = csvToObjects(poemRows);
-    allData.videos  = csvToObjects(videoRows);
-    allData.bgm     = csvToObjects(bgmRows);
-  } catch(e) {
-    console.warn("データ取得エラー:", e);
-  }
+  const [histRows, poemRows, videoRows, bgmRows] = await Promise.all([
+    fetchCSV(GID.history),
+    fetchCSV(GID.poems),
+    fetchCSV(GID.videos),
+    fetchCSV(GID.bgm),
+  ]);
+  allData.history = csvToObjects(histRows).reverse();
+  allData.poems   = csvToObjects(poemRows);
+  allData.videos  = csvToObjects(videoRows);
+  allData.bgm     = csvToObjects(bgmRows);
 }
 
 async function loadPageData(name) {
   await loadAll();
-  if (name === "home")     renderHome();
-  if (name === "stats")    renderStats();
-  if (name === "poems")    renderPoems();
-  if (name === "videos")   renderVideos();
-  if (name === "bgm")      renderBGM();
-  if (name === "logs")     renderLogs();
+  if (name === "home")      renderHome();
+  if (name === "stats")     renderStats();
+  if (name === "poems")     renderPoems();
+  if (name === "videos")    renderVideos();
+  if (name === "bgm")       renderBGM();
+  if (name === "logs")      renderLogs();
 }
 
 // ===== ホーム =====
@@ -795,56 +949,65 @@ function renderHome() {
   const poems   = allData.poems;
   const videos  = allData.videos;
 
-  // KPI
-  const unpublishedPoems = poems.filter(p => p["ステータス"] === "未投稿").length;
-  const activeVideos     = videos.filter(v => v["ステータス"] === "有効").length;
+  // 投稿済み判定（ステータス列があればそちら優先）
+  const unpub = poems.filter(p =>
+    (p["ステータス"] || p["O"] || "") === "未投稿" || p["投稿回数"] === "0"
+  ).length;
+  const active = videos.filter(v =>
+    (v["ステータス"] || v["P"] || "") === "有効"
+  ).length;
 
   const thisWeek = history.slice(0, 7);
-  const weekPlays = thisWeek.reduce((sum, r) =>
-    sum + (parseInt(r["X再生数"]||0) + parseInt(r["YouTube再生数"]||0) + parseInt(r["Instagram再生数"]||0)), 0);
+  const weekPlays = thisWeek.reduce((s, r) =>
+    s + (parseInt(r["YouTube再生数"]||0) + parseInt(r["Instagram再生数"]||0)), 0);
 
+  const now = new Date();
   const thisMonth = history.filter(r => {
     const d = new Date(r["投稿日時"]);
-    const n = new Date();
-    return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
 
-  document.getElementById("kpiPoems").textContent   = unpublishedPoems;
-  document.getElementById("kpiVideos").textContent  = activeVideos;
-  document.getElementById("kpiPlays").textContent   = weekPlays.toLocaleString();
-  document.getElementById("kpiPosts").textContent   = thisMonth;
+  const kpiPoems = document.getElementById("kpiPoems");
+  kpiPoems.textContent = unpub;
+  kpiPoems.style.color = unpub <= 10 ? "var(--red)" : "var(--gold)";
 
-  // 色分け
-  if (unpublishedPoems <= 10) document.getElementById("kpiPoems").style.color = "var(--red)";
-  if (activeVideos <= 10)     document.getElementById("kpiVideos").style.color = "var(--red)";
+  const kpiVid = document.getElementById("kpiVideos");
+  kpiVid.textContent = active;
+  kpiVid.style.color = active <= 10 ? "var(--red)" : "var(--gold)";
 
-  // 今日の投稿プレビュー
-  const next = poems.find(p => p["ステータス"] === "未投稿");
+  document.getElementById("kpiPlays").textContent = weekPlays.toLocaleString();
+  document.getElementById("kpiPosts").textContent = thisMonth;
+
+  // 次回投稿詩プレビュー
+  const next = poems.find(p =>
+    (p["ステータス"] || "") === "未投稿" || parseInt(p["投稿回数"]||0) === 0
+  );
   if (next) {
-    document.getElementById("previewPoem").textContent = next["詩"] || "—";
+    document.getElementById("previewPoem").textContent =
+      next["文字列"] || next["詩"] || "—";
     const tags = [next["感情"],next["時間"],next["天気"],next["季節"]].filter(Boolean);
     document.getElementById("previewTags").innerHTML =
       tags.map(t => `<span class="tag">${t}</span>`).join("");
+  } else {
+    document.getElementById("previewPoem").textContent = "スプレッドシートに接続できません";
   }
-  document.getElementById("nextPostTime").textContent = "21:30 JST";
 
-  // グラフ
   drawChart7Days(thisWeek.slice(0,7).reverse());
 
   // テーブル
   const tbody = document.getElementById("recentTable");
   tbody.innerHTML = "";
-  history.slice(0, 15).forEach(r => {
-    const total = parseInt(r["X再生数"]||0)+parseInt(r["YouTube再生数"]||0)+parseInt(r["Instagram再生数"]||0);
+  history.slice(0, 20).forEach(r => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td class="td-mono">${r["投稿日時"]?.slice(0,10)||""}</td>
-      <td>${(r["詩"]||"").slice(0,18).replace(/\n/g,"　")}</td>
+      <td class="td-mono">${(r["投稿日時"]||"").slice(0,10)}</td>
+      <td>${(r["詩"]||"").slice(0,20).replace(/\n/g,"　")}</td>
       <td>${r["フィルター"]||""}</td>
-      <td class="td-mono">${parseInt(r["X再生数"]||0).toLocaleString()}</td>
       <td class="td-mono">${parseInt(r["YouTube再生数"]||0).toLocaleString()}</td>
+      <td class="td-mono">${parseInt(r["YouTubeいいね数"]||0).toLocaleString()}</td>
       <td class="td-mono">${parseInt(r["Instagram再生数"]||0).toLocaleString()}</td>
-      <td class="td-mono" style="color:var(--gold)">${total.toLocaleString()}</td>
+      <td class="td-mono">${parseInt(r["Instagramいいね数"]||0).toLocaleString()}</td>
+      <td class="td-mono">${(r["収集日時"]||"—").slice(0,10)}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -852,81 +1015,137 @@ function renderHome() {
 
 function drawChart7Days(data) {
   const canvas = document.getElementById("chartPlays");
-  const ctx    = canvas.getContext("2d");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
   canvas.width  = canvas.parentElement.clientWidth - 32;
-  canvas.height = 120;
+  const H = 100, padL = 10, padB = 20, W = canvas.width;
+  ctx.clearRect(0, 0, W, H + padB);
 
   const values = data.map(r =>
-    parseInt(r["X再生数"]||0)+parseInt(r["YouTube再生数"]||0)+parseInt(r["Instagram再生数"]||0));
-  const labels = data.map(r => r["投稿日時"]?.slice(5,10)||"");
-  const maxV   = Math.max(...values, 1);
+    parseInt(r["YouTube再生数"]||0) + parseInt(r["Instagram再生数"]||0));
+  const labels = data.map(r => (r["投稿日時"]||"").slice(5,10));
+  const maxV = Math.max(...values, 1);
 
-  const W = canvas.width, H = 100, padL = 10, padB = 20;
-  ctx.clearRect(0,0,W,H+padB);
-
-  // グリッドライン
   ctx.strokeStyle = "rgba(200,140,80,.06)";
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const y = padB + (H - padB) * (1 - i/4);
     ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W,y); ctx.stroke();
   }
-
   if (values.length < 2) return;
   const step = (W - padL) / (values.length - 1);
-
-  // ライン
   const grad = ctx.createLinearGradient(0,0,0,H);
   grad.addColorStop(0,"rgba(200,120,48,.9)");
   grad.addColorStop(1,"rgba(200,120,48,.2)");
-  ctx.strokeStyle = grad;
-  ctx.lineWidth = 1.5;
-  ctx.lineJoin = "round";
+  ctx.strokeStyle = grad; ctx.lineWidth = 1.5; ctx.lineJoin = "round";
   ctx.beginPath();
   values.forEach((v,i) => {
-    const x = padL + i*step;
-    const y = padB + (H - padB) * (1 - v/maxV);
-    i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    const x = padL + i*step, y = padB + (H-padB)*(1-v/maxV);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
   });
   ctx.stroke();
-
-  // ドット + ラベル
-  ctx.fillStyle = "var(--amber)";
-  ctx.font = "9px JetBrains Mono, monospace";
-  ctx.fillStyle = "rgba(144,96,64,.8)";
   values.forEach((v,i) => {
-    const x = padL + i*step;
-    const y = padB + (H - padB) * (1 - v/maxV);
-    ctx.beginPath();
-    ctx.arc(x, y, 2.5, 0, Math.PI*2);
-    ctx.fillStyle = "var(--amber)";
-    ctx.fill();
+    const x = padL + i*step, y = padB + (H-padB)*(1-v/maxV);
+    ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2);
+    ctx.fillStyle = "var(--amber)"; ctx.fill();
     ctx.fillStyle = "rgba(144,96,64,.7)";
+    ctx.font = "9px JetBrains Mono,monospace";
     ctx.fillText(labels[i], x-10, H+padB-2);
+  });
+}
+
+// ===== パフォーマンス =====
+function renderStats() {
+  const history = allData.history;
+
+  // フィルター別YT再生平均
+  const fMap = {};
+  history.forEach(r => {
+    const f = r["フィルター"]||"不明";
+    const v = parseInt(r["YouTube再生数"]||0);
+    if (!fMap[f]) fMap[f] = {sum:0,n:0};
+    fMap[f].sum += v; fMap[f].n++;
+  });
+  const filters = Object.entries(fMap)
+    .map(([name,{sum,n}]) => ({name, avg:Math.round(sum/(n||1))}))
+    .sort((a,b)=>b.avg-a.avg).slice(0,8);
+  drawBarChart("chartFilter", filters.map(f=>f.name), filters.map(f=>f.avg));
+
+  // 感情タグ別IG平均
+  const eMap = {};
+  history.forEach(r => {
+    // 感情タグはスプレッドシートの詩シートと紐付けが必要なため現在はダミー
+    const e = "データ準備中";
+    const v = parseInt(r["Instagramいいね数"]||0);
+    if (!eMap[e]) eMap[e] = {sum:0,n:0};
+    eMap[e].sum += v; eMap[e].n++;
+  });
+
+  // 累計
+  const ytTotal = history.reduce((s,r) => s + parseInt(r["YouTube再生数"]||0), 0);
+  const igTotal = history.reduce((s,r) => s + parseInt(r["Instagram再生数"]||0), 0);
+  const ytLike  = history.reduce((s,r) => s + parseInt(r["YouTubeいいね数"]||0), 0);
+  const igLike  = history.reduce((s,r) => s + parseInt(r["Instagramいいね数"]||0), 0);
+
+  document.getElementById("ytTotal").innerHTML = `
+    <div style="font-family:var(--mono);font-size:.75rem;color:var(--text);">
+      再生数 <span style="color:var(--gold)">${ytTotal.toLocaleString()}</span> ／
+      いいね <span style="color:var(--gold)">${ytLike.toLocaleString()}</span>
+    </div>`;
+  document.getElementById("igTotal").innerHTML = `
+    <div style="font-family:var(--mono);font-size:.75rem;color:var(--text);">
+      再生数 <span style="color:var(--gold)">${igTotal.toLocaleString()}</span> ／
+      いいね <span style="color:var(--gold)">${igLike.toLocaleString()}</span>
+    </div>`;
+}
+
+function drawBarChart(id, labels, values) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  canvas.width = canvas.parentElement.clientWidth - 32;
+  const H = parseInt(canvas.getAttribute("height")) || 200;
+  const W = canvas.width, maxV = Math.max(...values,1);
+  const padL = 70, padB = 30, padT = 10;
+  const barH = (H - padB - padT) / (labels.length || 1);
+  ctx.clearRect(0,0,W,H);
+  ctx.font = "9px JetBrains Mono,monospace";
+  labels.forEach((lbl,i) => {
+    const y = padT + i*barH;
+    const barW = (values[i]/maxV)*(W-padL-10);
+    ctx.fillStyle = "rgba(200,140,80,.15)";
+    ctx.fillRect(padL, y+barH*.15, barW, barH*.7);
+    ctx.fillStyle = "rgba(144,96,64,.8)";
+    ctx.fillText(lbl.slice(0,7), 0, y+barH*.6);
+    ctx.fillStyle = "rgba(232,170,80,.8)";
+    ctx.fillText(values[i].toLocaleString(), padL+barW+6, y+barH*.6);
   });
 }
 
 // ===== 詩テーブル =====
 function renderPoems() {
   const poems = allData.poems;
-  const unpub = poems.filter(p => p["ステータス"]==="未投稿").length;
-  const pub   = poems.filter(p => p["ステータス"]==="投稿済み").length;
+  const unpub = poems.filter(p => (p["ステータス"]||"") === "未投稿").length;
+  const pub   = poems.filter(p => (p["ステータス"]||"") === "投稿済み").length;
   document.getElementById("poemCountUnpublished").textContent = unpub;
   document.getElementById("poemCountPublished").textContent   = pub;
   document.getElementById("poemCountTotal").textContent       = poems.length;
+  document.getElementById("poemAlert").style.display = unpub <= 10 ? "block" : "none";
 
   const tbody = document.getElementById("poemsTable");
   tbody.innerHTML = "";
   poems.forEach(r => {
     const tr = document.createElement("tr");
-    const badgeClass = r["ステータス"]==="未投稿" ? "badge-ok" : "badge-wait";
+    const bc = (r["ステータス"]||"") === "未投稿" ? "badge-ok" : "badge-wait";
     tr.innerHTML = `
-      <td>${(r["文字列"]||"").slice(0,24).replace(/\n/g,"　")}</td>
+      <td>${(r["文字列"]||r["詩"]||"").slice(0,24).replace(/\n/g,"　")}</td>
       <td>${r["感情"]||""}</td>
       <td>${r["季節"]||""}</td>
       <td>${r["時間"]||""}</td>
+      <td>${r["天気"]||""}</td>
       <td class="td-mono">${r["投稿回数"]||0}</td>
-      <td><span class="badge ${badgeClass}">${r["ステータス"]||""}</span></td>
+      <td class="td-mono">${(r["最終投稿日"]||"—").slice(0,10)}</td>
+      <td><span class="badge ${bc}">${r["ステータス"]||""}</span></td>
     `;
     tbody.appendChild(tr);
   });
@@ -935,21 +1154,25 @@ function renderPoems() {
 // ===== 動画テーブル =====
 function renderVideos() {
   const vids = allData.videos;
-  document.getElementById("videoCountActive").textContent  = vids.filter(v=>v["ステータス"]==="有効").length;
-  document.getElementById("videoCountPending").textContent = vids.filter(v=>v["ステータス"]==="タグ待ち").length;
-  document.getElementById("videoCountUsed").textContent    = vids.filter(v=>parseInt(v["使用回数"]||0)>0).length;
+  const active   = vids.filter(v => (v["ステータス"]||"") === "有効").length;
+  const inactive = vids.filter(v => (v["ステータス"]||"") === "無効").length;
+  document.getElementById("videoCountActive").textContent   = active;
+  document.getElementById("videoCountInactive").textContent = inactive;
+  document.getElementById("videoCountTotal").textContent    = vids.length;
+  document.getElementById("videoAlert").style.display = active <= 10 ? "block" : "none";
 
   const tbody = document.getElementById("videosTable");
   tbody.innerHTML = "";
   vids.forEach(r => {
     const tr = document.createElement("tr");
-    const bc = r["ステータス"]==="有効" ? "badge-ok" : "badge-wait";
+    const bc = (r["ステータス"]||"") === "有効" ? "badge-ok" : "badge-wait";
     tr.innerHTML = `
       <td>${(r["ファイル名"]||"").slice(0,28)}</td>
       <td>${r["感情"]||""}</td>
       <td>${r["季節"]||""}</td>
       <td>${r["場所"]||""}</td>
       <td class="td-mono">${r["使用回数"]||0}</td>
+      <td class="td-mono">${(r["最終使用日"]||"—").slice(0,10)}</td>
       <td><span class="badge ${bc}">${r["ステータス"]||""}</span></td>
     `;
     tbody.appendChild(tr);
@@ -962,8 +1185,8 @@ function renderBGM() {
   tbody.innerHTML = "";
   allData.bgm.forEach(r => {
     const tr = document.createElement("tr");
-    const mc  = r["マスタリング済み"]==="完了" ? "badge-ok" : "badge-wait";
-    const mvc = r["フルMV生成済み"]==="完了"  ? "badge-ok" : "badge-wait";
+    const mc  = (r["マスタリング済み"]||"") === "完了" ? "badge-ok" : "badge-wait";
+    const mvc = (r["フルMV生成済み"]||"")   === "完了" ? "badge-ok" : "badge-wait";
     tr.innerHTML = `
       <td>${(r["ファイル名"]||"").slice(0,30)}</td>
       <td class="td-mono">${r["BPM"]||"—"}</td>
@@ -977,62 +1200,16 @@ function renderBGM() {
   });
 }
 
-// ===== パフォーマンス =====
-function renderStats() {
-  // フィルター別集計
-  const filterMap = {};
-  allData.history.forEach(r => {
-    const f = r["フィルター"]||"不明";
-    const p = parseInt(r["X再生数"]||0)+parseInt(r["YouTube再生数"]||0)+parseInt(r["Instagram再生数"]||0);
-    if (!filterMap[f]) filterMap[f] = {sum:0,count:0};
-    filterMap[f].sum   += p;
-    filterMap[f].count += 1;
-  });
-  const filters = Object.entries(filterMap)
-    .map(([name,{sum,count}]) => ({name, avg: Math.round(sum/(count||1))}))
-    .sort((a,b)=>b.avg-a.avg).slice(0,8);
-
-  drawBarChart("chartFilter", filters.map(f=>f.name), filters.map(f=>f.avg), "再生数（平均）");
-}
-
-function drawBarChart(id, labels, values, label) {
-  const canvas = document.getElementById(id);
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-  canvas.width  = canvas.parentElement.clientWidth - 32;
-  const H = parseInt(canvas.height) || 200;
-  const W = canvas.width;
-  const maxV = Math.max(...values, 1);
-  const padL = 80, padB = 30, padT = 10;
-  const barH  = (H - padB - padT) / labels.length;
-
-  ctx.clearRect(0,0,W,H);
-  ctx.font = "9px JetBrains Mono, monospace";
-
-  labels.forEach((lbl, i) => {
-    const y    = padT + i*barH;
-    const barW = (values[i]/maxV) * (W-padL-10);
-
-    ctx.fillStyle = "rgba(200,140,80,.15)";
-    ctx.fillRect(padL, y+barH*.15, barW, barH*.7);
-    ctx.fillStyle = "rgba(200,120,48,.6)";
-    ctx.fillRect(padL, y+barH*.15, Math.min(barW,4), barH*.7);
-
-    ctx.fillStyle = "rgba(144,96,64,.8)";
-    ctx.fillText(lbl.slice(0,6), 0, y+barH*.6);
-    ctx.fillStyle = "rgba(232,170,80,.8)";
-    ctx.fillText(values[i].toLocaleString(), padL+barW+6, y+barH*.6);
-  });
-}
-
 // ===== ログ =====
 function renderLogs() {
+  // 実際のログはGitHub Actionsから取得。現在はダミー表示。
   const logs = [
-    { time:"03:00", type:"ok",   msg:"自動ブラッシュアップ完了" },
-    { time:"21:30", type:"ok",   msg:"投稿完了 / X・YT・IG" },
-    { time:"21:28", type:"info", msg:"動画生成 480フレーム / 128秒" },
-    { time:"21:25", type:"info", msg:"素材選択: 写ルンです / 相性チェックOK" },
-    { time:"09:00", type:"ok",   msg:"静止画投稿完了 / IG・Pinterest" },
+    { time:"03/11 09:00", type:"ok",   msg:"collect_analytics.yml — 反応数収集完了（直近30本）" },
+    { time:"03/11 01:00", type:"ok",   msg:"refresh_instagram_token.yml — トークン更新完了" },
+    { time:"03/10 21:00", type:"ok",   msg:"daily_post.yml — YouTube・X投稿完了" },
+    { time:"03/10 21:00", type:"err",  msg:"post_instagram.py — 400 Bad Request（未解決）" },
+    { time:"03/10 21:00", type:"err",  msg:"prepare_tiktok.py — storageQuotaExceeded（未解決）" },
+    { time:"03/10 09:00", type:"ok",   msg:"collect_analytics.yml — 反応数収集完了" },
   ];
   document.getElementById("logList").innerHTML =
     logs.map(l => `
@@ -1044,40 +1221,48 @@ function renderLogs() {
     `).join("");
 }
 
-// ===== 設定保存（スプレッドシートに書き込み） =====
+// ===== 設定保存 =====
 function saveSettings() {
-  alert("設定を保存しました（次回の投稿から反映されます）");
+  alert("設定を保存しました（スプレッドシートへの書き込みは未実装です）");
 }
 
 // ===== GitHub Actions トリガー =====
 function triggerGitHub(workflow, inputs={}) {
-  if (!GITHUB_TOKEN || !GITHUB_REPO) {
-    alert("GITHUB_TOKEN と GITHUB_REPO を設定してください");
-    return Promise.reject();
+  if (!GITHUB_TOKEN) {
+    const token = prompt("GitHub Personal Access Token を入力してください（repo・actions スコープ必要）:");
+    if (!token) return Promise.reject("トークンなし");
+    GITHUB_TOKEN = token;
+    localStorage.setItem("gh_token", token);
   }
+  const msg = document.getElementById("triggerMsg");
+  if (msg) msg.textContent = "実行中…";
   return fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/${workflow}.yml/dispatches`, {
-    method:"POST",
-    headers:{
-      "Authorization":`Bearer ${GITHUB_TOKEN}`,
-      "Accept":"application/vnd.github.v3+json",
-      "Content-Type":"application/json",
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${GITHUB_TOKEN}`,
+      "Accept": "application/vnd.github.v3+json",
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify({ ref:"main", inputs })
+    body: JSON.stringify({ ref:"master", inputs })
+  }).then(res => {
+    if (msg) msg.textContent = res.ok ? "✓ ワークフローを開始しました" : `エラー: ${res.status}`;
+    return res;
   });
 }
 
 function triggerPost() {
-  if (!confirm("今すぐ投稿しますか？")) return;
-  triggerGitHub("daily_post").then(() => alert("投稿ワークフローを開始しました"));
+  if (!confirm("daily_post.yml を今すぐ実行しますか？")) return;
+  triggerGitHub("daily_post");
 }
 
-function generatePreview() {
-  triggerGitHub("daily_post", { dry_run:"true" })
-    .then(() => alert("動画生成のみ実行しました（投稿はしません）"));
+function generateDryRun() {
+  if (!confirm("ドライラン（動画生成のみ・投稿しない）を実行しますか？")) return;
+  triggerGitHub("daily_post", { dry_run:"true" });
 }
 
-function cancelPost() {
-  alert("本日の投稿をキャンセルしました");
+function triggerAnalytics() {
+  if (!confirm("collect_analytics.yml を今すぐ実行しますか？")) return;
+  triggerGitHub("collect_analytics");
 }
 
 // ===== AIチャット =====
@@ -1092,29 +1277,36 @@ async function sendChat() {
 
   appendMsg("user", message);
   input.value = "";
-  chatHistory.push({ user: message, assistant: "" });
-
   const thinking = appendMsg("ai", "考え中…", true);
 
   try {
-    // GitHub Actions経由でClaude APIを呼ぶ
-    await triggerGitHub("ai_producer", {
-      mode: "chat",
-      message: message,
-      history: JSON.stringify(chatHistory.slice(-5)),
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: `あなたはたまのためいき。プロジェクトのAIアシスタント「クロちゃん」です。
+ユーザーはユキさん（ご主人様）です。
+プロジェクトは詩・BGM・映像を自動生成してYouTube・Instagram・X・TikTokに毎日自動投稿するシステムです。
+世界観：静謐・哀愁・余白・かすかな希望。媚びない。消費されない。
+スプレッドシート・GitHub Actions・Google Driveを使って運用しています。
+丁寧に、でも簡潔にお答えください。`,
+        messages: [
+          ...chatHistory.slice(-6),
+          { role: "user", content: message }
+        ]
+      })
     });
-
-    // レスポンスをポーリング（実際のシステムではDriveから取得）
-    setTimeout(() => {
-      thinking.remove();
-      const reply = "（AIプロデューサーが応答します。実際のシステムではDriveからレスポンスを取得します）";
-      appendMsg("ai", reply);
-      chatHistory[chatHistory.length-1].assistant = reply;
-    }, 2000);
-
+    const data = await res.json();
+    thinking.remove();
+    const reply = data.content?.[0]?.text || "エラーが発生しました";
+    appendMsg("ai", reply);
+    chatHistory.push({ role:"user", content:message });
+    chatHistory.push({ role:"assistant", content:reply });
   } catch(e) {
     thinking.remove();
-    appendMsg("ai", "エラーが発生しました");
+    appendMsg("ai", "接続エラーが発生しました");
   }
 }
 
@@ -1129,7 +1321,7 @@ function appendMsg(role, text, isTemp=false) {
 }
 
 // ===== 初期化 =====
-(async function() {
+(async () => {
   await loadAll();
   renderHome();
 })();
