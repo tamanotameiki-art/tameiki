@@ -39,8 +39,8 @@ X保存数 / YouTube保存数 / Instagram保存数 /
 YouTubeいいね数 / YouTubeコメント数 / Instagramいいね数 / Instagramコメント数 / Instagramインプレッション / 収集日時
 
 ## GitHub Actionsワークフロー一覧
-- daily_post.yml: 毎日自動投稿（YouTube・Instagram・X・TikTok）
-- collect_analytics.yml: 毎日23:00 UTC（8:00 JST）にYouTube・Instagram反応数収集
+- daily_post.yml: 毎日21:00 JST自動投稿（YouTube・Instagram・X・TikTok）
+- collect_analytics.yml: 毎日8:00 JSTにYouTube・Instagram反応数収集（YOUTUBE_API_KEY使用）
 - refresh_instagram_token.yml: 毎月1日にInstagramトークン自動リフレッシュ
 - bgm_mastering.yml: BGMマスタリング
 
@@ -50,7 +50,7 @@ YouTubeいいね数 / YouTubeコメント数 / Instagramいいね数 / Instagram
 - post_x.py: X投稿
 - post_pinterest.py: Pinterest投稿（Standard申請待ち）
 - prepare_tiktok.py: TikTok投稿準備（storageQuotaExceededエラー未解決）
-- collect_analytics.py: YouTube・Instagram反応数収集（直近30本）
+- collect_analytics.py: YouTube・Instagram反応数収集（直近30本・YOUTUBE_API_KEY使用）
 - generate_captions.py: キャプション生成
 - generate_images.py: 画像生成
 - run_generate.py: メイン生成スクリプト
@@ -60,14 +60,46 @@ YouTubeいいね数 / YouTubeコメント数 / Instagramいいね数 / Instagram
 - Instagramプロアカウント設定・Facebookページ連携
 - Meta for Developers「tameiki-system」アプリ設定・テスター登録
 - システムユーザー「tameiki-bot」作成・権限付与
-- Instagramトークン毎月自動リフレッシュ（refresh_instagram_token.yml）
+- Instagramトークン毎月自動リフレッシュ（refresh_instagram_token.yml）動作確認済み
 - collect_analytics.py作成・動作確認完了
 - スプレッドシート投稿履歴シートに反応数列を自動追加
+- daily_post.ymlの重複アナリティクスジョブを削除・整理済み
 
 ## 未完了タスク（優先順）
-1. post_instagram.py: 400 Bad Request エラー解消
-2. TikTok: storageQuotaExceededエラー解消
-3. Pinterest: Standard申請（法人不要・個人でも申請可能か要確認）
-4. YouTube: サムネイル・エンドスクリーン設定（スコープ不足）
-5. ダッシュボードシート作成
-6. LINE通知の代替手段を決める
+
+### 1. Instagram投稿 — 400 Bad Request
+状況：post_instagram.pyで投稿するとエラーが出る。
+やること：Instagram Graph APIの設定を見直す。次回作業時に現状のエラー内容を見てから対応。
+
+### 2. TikTok — storageQuotaExceeded
+状況：Service AccountはGoogleドライブのストレージクォータを持たないためエラーが出る。
+やること：アップロード先を共有ドライブに変更するか、OAuthでオーナー（tamanotameiki@gmail.com）のDriveに直接アップロードする方式に書き直す。
+
+### 3. Pinterest — Standard申請
+状況：Trialアクセスのままでは投稿APIが使えない。"consumer type is not supported"エラー。
+やること：https://developers.pinterest.com/ からアクセスレベルの格上げを申請する。無料・審査あり。
+
+### 4. YouTubeサムネイル自動設定
+状況：thumbnails.set APIで403 forbidden。チャンネルが「認証済み」でないと使えない。
+やること：チャンネルの電話番号認証を行ってから再挑戦。もしくは認証なしのまま運用（後回し可）。
+
+### 5. YouTubeエンドスクリーン自動設定
+状況：insufficientPermissionsエラー。OAuthスコープにyoutube.force-sslが含まれていない。
+やること：
+1. E:\tamanotameiki_system\get_youtube_token.py を開く
+2. SCOPESにhttps://www.googleapis.com/auth/youtube.force-sslを追加
+3. スクリプトを実行してトークンを再取得
+4. 新しいyoutube_credentials.jsonの内容をGitHub SecretsのYOUTUBE_CREDENTIALSに上書き登録
+
+### 6. スプレッドシート「ダッシュボード」シート作成
+状況：シートがまだない。
+やること：投稿履歴データをもとに自動集計されるダッシュボードシートを設計・作成する。
+表示内容：推移グラフ・ヒートマップ・タグ別平均・詩ストック残数など。
+
+### 7. LINE通知の代替
+状況：LINE Notifyが2025年3月にサービス終了。現在のnotify_line.pyは動かない。
+やること：代替手段を決める。候補：メール通知（Gmail API）・Discord Webhook・Slack Webhook。
+
+### 8. 公式HP — Pinterest追加・スマホ対応
+状況：docs/index.htmlにPinterestリンクがない。スマホレイアウト未調整。
+やること：PinterestアイコンとURLを追加。CSSにメディアクエリを追加してスマホ表示を整える。
