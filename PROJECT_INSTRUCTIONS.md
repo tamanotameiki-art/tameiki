@@ -309,6 +309,7 @@ Scripts Properties（Apps Script側のシークレット）：CLAUDE_API_KEY / G
 - スプレッドシート投稿履歴シートに反応数列を自動追加
 - daily_post.ymlの重複アナリティクスジョブを削除・整理済み
 - 管理画面（admin_tK9mPq2vXr8n.html）作成・公開済み
+- text.py：テキスト横幅を画面の3/4に拡大（SNS安全エリアより詩の視認性を優先）
 
 ---
 
@@ -325,7 +326,12 @@ print(f"poem_first_line={poem_lines[0]}")
 早めに30〜60本追加登録しておくと安心。
 
 ### git操作の注意
-git pushするたびに必ずgit pull --rebaseしてからgit pushすること。
+必ず以下の順番で実行すること。
+git add .
+git commit -m "メッセージ"
+git pull --rebase
+git push
+順番を守らないとコンフリクトが発生する。
 
 ### ローカルテスト時の注意
 post_x.pyはrequests-oauthlibを使用。ローカルでテストする場合は以下が必要。
