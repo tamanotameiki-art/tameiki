@@ -167,7 +167,6 @@ def select_video(service, spreadsheet_id, poem_data, used_video_ids=None):
     max_score = max(s["score"] for s in scored)
     top_candidates = [s for s in scored if s["score"] == max_score]
 
-    # 使用回数が少ないほど選ばれやすい重み付き
     min_count = min(c["use_count"] for c in top_candidates)
     max_count = max(c["use_count"] for c in top_candidates)
     if max_count == min_count:
@@ -219,27 +218,36 @@ def select_filter(poem_tags, video_tags=None, used_filters=None):
 
 
 def select_se(service, spreadsheet_id, poem_tags, filter_name):
-    """環境音を選択（フィルター優先＋使用回数少ない順にランダム）"""
+    """環境音を選択
+    - フィルターマップで種類の優先順位を決定
+    - 詩のタグ（時間・天気・季節・場所）でスコアリング
+    - 7日以内に使用済みは除外
+    - スコア上位グループから使用回数少ない順に重み付きランダム選択
+    """
     data = get_sheet_data(service, spreadsheet_id, "環境音")
     if len(data) <= 1:
         return []
     rows = data[1:]
 
+    # 7日前の日時（最終使用日の比較用）
+    now_jst = datetime.now(JST)
+    cooldown_days = 7
+
     FILTER_SE_MAP = {
-        "写ルンです":   [("レコードノイズ", "メイン"), ("雨", "サブ")],
-        "VHS":          [("ブラウン管ノイズ", "メイン"), ("雑踏", "サブ")],
+        "写ルンです":     [("レコードノイズ", "メイン"), ("雨", "サブ")],
+        "VHS":            [("ブラウン管ノイズ", "メイン"), ("雑踏", "サブ")],
         "燃えたフィルム": [("風", "メイン"), ("虫", "アクセント")],
-        "ドリーミー":   [("川", "メイン"), ("風", "サブ")],
+        "ドリーミー":     [("川", "メイン"), ("風", "サブ")],
         "サイレント映画": [("レコードノイズ", "メイン")],
         "ゴールデンアワー": [("鳥", "メイン"), ("風", "サブ")],
-        "霧の中":       [("雨", "メイン"), ("水滴", "サブ")],
-        "水の底":       [("水", "メイン"), ("深い静寂", "サブ")],
-        "夜光":         [("雑踏", "メイン"), ("電車", "アクセント")],
-        "色褪せた夏":   [("蝉", "メイン"), ("風", "サブ")],
-        "朝靄":         [("鳥", "メイン"), ("風", "サブ")],
-        "廃墟のロマン": [("風", "メイン"), ("虫", "サブ")],
-        "月明かり":     [("鈴虫", "メイン"), ("風", "アクセント")],
-        "インスタント": [("雑踏", "メイン"), ("風", "サブ")],
+        "霧の中":         [("雨", "メイン"), ("水滴", "サブ")],
+        "水の底":         [("水", "メイン"), ("深い静寂", "サブ")],
+        "夜光":           [("雑踏", "メイン"), ("電車", "アクセント")],
+        "色褪せた夏":     [("蝉", "メイン"), ("風", "サブ")],
+        "朝靄":           [("鳥", "メイン"), ("風", "サブ")],
+        "廃墟のロマン":   [("風", "メイン"), ("虫", "サブ")],
+        "月明かり":       [("鈴虫", "メイン"), ("風", "アクセント")],
+        "インスタント":   [("雑踏", "メイン"), ("風", "サブ")],
     }
 
     preferred = FILTER_SE_MAP.get(filter_name, [])
@@ -247,28 +255,71 @@ def select_se(service, spreadsheet_id, poem_tags, filter_name):
 
     for se_kind, layer in preferred:
         # 該当する種類の音源を全て集める
-        matches = [r for r in rows if len(r) > 2 and se_kind in str(r[2])]
-        if not matches:
-            continue
-        # 使用回数が少ないものを優遇（重み付きランダム）
-        use_counts = []
-        for r in matches:
-            count = int(r[10]) if len(r) > 10 and r[10] else 0
-            use_counts.append(count)
-        min_count = min(use_counts)
-        max_count = max(use_counts)
-        if max_count == min_count:
-            chosen = random.choice(matches)
-        else:
-            weights = [1.0 / (c - min_count + 1) for c in use_counts]
-            chosen = random.choices(matches, weights=weights, k=1)[0]
+        candidates = []
+        for r in rows:
+            if len(r) < 2 or not r[1]:
+                continue
+            if se_kind not in str(r[2] if len(r) > 2 else ""):
+                continue
 
+            # 7日以内に使用済みは除外
+            last_used_str = r[12] if len(r) > 12 else ""
+            if last_used_str:
+                try:
+                    last_used = datetime.fromisoformat(str(last_used_str).replace("Z", "+00:00"))
+                    if last_used.tzinfo is None:
+                        last_used = last_used.replace(tzinfo=JST)
+                    days_since = (now_jst - last_used).days
+                    if days_since < cooldown_days:
+                        print(f"  SE除外（{days_since}日前使用）: {r[0]}", flush=True)
+                        continue
+                except Exception:
+                    pass  # パースできない場合はそのまま使用可能
+
+            # タグスコアリング（時間・天気・季節・場所・質感）
+            score = 0
+            if match_tag(r[4] if len(r) > 4 else "", poem_tags.get("time")):    score += 2
+            if match_tag(r[5] if len(r) > 5 else "", poem_tags.get("weather")): score += 2
+            if match_tag(r[6] if len(r) > 6 else "", poem_tags.get("season")):  score += 1
+            if match_tag(r[7] if len(r) > 7 else "", poem_tags.get("place", poem_tags.get("color"))): score += 1
+            if match_tag(r[8] if len(r) > 8 else "", poem_tags.get("texture", "")): score += 1
+
+            use_count = int(r[10]) if len(r) > 10 and r[10] else 0
+            candidates.append({
+                "file_id":   r[1],
+                "file_name": r[0],
+                "kind":      se_kind,
+                "layer":     layer,
+                "score":     score,
+                "use_count": use_count,
+                "row":       r,
+            })
+
+        if not candidates:
+            print(f"  SE候補なし（クールダウン除外後）: {se_kind} → スキップ", flush=True)
+            continue
+
+        # スコア上位グループから使用回数少ない順に重み付きランダム選択
+        max_score = max(c["score"] for c in candidates)
+        top = [c for c in candidates if c["score"] == max_score]
+
+        min_count = min(c["use_count"] for c in top)
+        max_count = max(c["use_count"] for c in top)
+        if max_count == min_count:
+            chosen = random.choice(top)
+        else:
+            weights = [1.0 / (c["use_count"] - min_count + 1) for c in top]
+            chosen = random.choices(top, weights=weights, k=1)[0]
+
+        print(f"  SE選択: {chosen['file_name']} (score={chosen['score']}, 使用{chosen['use_count']}回)", flush=True)
         selected.append({
-            "file_id":   chosen[1] if len(chosen) > 1 else "",
-            "file_name": chosen[0] if chosen else "",
+            "file_id":   chosen["file_id"],
+            "file_name": chosen["file_name"],
             "kind":      se_kind,
             "layer":     layer,
+            "row_idx":   rows.index(chosen["row"]) + 2,
         })
+
         if len(selected) >= 3:
             break
 
