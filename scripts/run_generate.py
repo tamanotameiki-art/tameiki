@@ -97,8 +97,9 @@ def main():
     emotion_tags = [t.strip() for t in emotion_tags_str.split("・") if t.strip()]
     se_list     = selection.get("se_list", [])
 
-    poem_lines  = wrap_poem(poem)
+    poem_lines   = wrap_poem(poem)
     poem_wrapped = "\n".join(poem_lines)
+    poem_first_line = poem_lines[0]
     print(f"詩（改行後）:\n{poem_wrapped}", flush=True)
 
     bg_path = download_video_asset(video_id)
@@ -130,7 +131,7 @@ def main():
 
     merge_audio(output_path_silent, bgm_info["path"] if bgm_info else None, se_paths, output_path)
 
-    extract_thumbnail(output_path, thumbnail_path, poem_wrapped)
+    extract_thumbnail(output_path, thumbnail_path, poem_lines)
 
     if bgm_info and bgm_info.get("row"):
         increment_bgm_use_count(spreadsheet_id, creds_str, bgm_info["row"], bgm_info["use_count"])
@@ -139,7 +140,8 @@ def main():
     print(f"video_path={output_path}")
     print(f"thumbnail_path={thumbnail_path}")
     print(f"video_url={output_path}")
-    print(f"poem_first_line={poem_lines[0]}")
+    print(f"poem_first_line={poem_first_line}")
+    print(f"poem_wrapped={poem_wrapped}")   # ← 追加：GITHUB_OUTPUTに渡す用
     print(f"bgm_title={bgm_info['title'] if bgm_info else ''}")
 
     with open(os.environ.get("GITHUB_ENV", "/dev/null"), "a") as f:
@@ -303,7 +305,6 @@ def download_bgm(spreadsheet_id, creds_json_str):
             print("使用可能なBGMがありません", flush=True)
             return None
 
-        # 使用回数が少ない曲ほど選ばれやすい重み付きランダム選択
         min_count = min(c["use_count"] for c in candidates)
         max_count = max(c["use_count"] for c in candidates)
         if max_count == min_count:
@@ -314,7 +315,6 @@ def download_bgm(spreadsheet_id, creds_json_str):
 
         print(f"BGM選択: {bgm['title']} (使用回数: {bgm['use_count']})", flush=True)
 
-        # ダウンロード
         ext = os.path.splitext(bgm["file_name"])[1] or ".m4a"
         raw_path = f"/tmp/bgm_raw_{bgm['file_id'][:8]}{ext}"
         if not os.path.exists(raw_path):
@@ -327,7 +327,6 @@ def download_bgm(spreadsheet_id, creds_json_str):
                     _, done = downloader.next_chunk()
             print(f"BGMダウンロード完了: {raw_path}", flush=True)
 
-        # --- librosaで曲の長さと有効範囲を解析 ---
         CLIP_DURATION = 20.0
         try:
             with warnings.catch_warnings():
@@ -364,7 +363,6 @@ def download_bgm(spreadsheet_id, creds_json_str):
             print(f"BGM解析エラー（フォールバック）: {e}", flush=True)
             start_sec = 0.0
 
-        # --- ffmpegフルマスタリングチェーン ---
         work_dir = f"/tmp/bgm_work_{bgm['file_id'][:8]}"
         os.makedirs(work_dir, exist_ok=True)
 
@@ -477,7 +475,6 @@ def download_se(spreadsheet_id, creds_json_str, se_list):
         sheets = build("sheets", "v4", credentials=creds)
         drive  = build("drive",  "v3", credentials=creds)
 
-        # 現在のシートデータを取得（使用回数読み取り用）
         result = sheets.spreadsheets().values().get(
             spreadsheetId=spreadsheet_id,
             range="環境音!A:M"
@@ -492,7 +489,6 @@ def download_se(spreadsheet_id, creds_json_str, se_list):
             if not file_id:
                 continue
 
-            # ダウンロード
             ext = os.path.splitext(file_name)[1] or ".wav"
             output_path = f"/tmp/se_{file_id[:8]}{ext}"
             if not os.path.exists(output_path):
@@ -505,7 +501,6 @@ def download_se(spreadsheet_id, creds_json_str, se_list):
                         _, done = downloader.next_chunk()
                 print(f"環境音ダウンロード完了: {file_name}", flush=True)
 
-            # 音量チェック
             lufs = measure_rms_lufs(output_path)
             print(f"環境音 LUFS確認: {file_name} = {lufs:.1f} LUFS", flush=True)
             if lufs > -6.0:
@@ -519,19 +514,16 @@ def download_se(spreadsheet_id, creds_json_str, se_list):
 
             se_paths.append(output_path)
 
-            # 使用回数・最終使用日を更新
             if row_idx:
                 try:
                     row_data = all_rows[row_idx - 1] if row_idx - 1 < len(all_rows) else []
                     current_count = int(row_data[10]) if len(row_data) > 10 and row_data[10] else 0
-                    # K列（11列目）: 使用回数
                     sheets.spreadsheets().values().update(
                         spreadsheetId=spreadsheet_id,
                         range=f"環境音!K{row_idx}",
                         valueInputOption="RAW",
                         body={"values": [[current_count + 1]]}
                     ).execute()
-                    # M列（13列目）: 最終使用日
                     sheets.spreadsheets().values().update(
                         spreadsheetId=spreadsheet_id,
                         range=f"環境音!M{row_idx}",
@@ -580,11 +572,15 @@ def download_video_asset(file_id):
     return output_path
 
 
-def extract_thumbnail(video_path, thumb_path, poem):
-    """サムネイル抽出"""
-    from config import TEXT_DELAY, CHAR_INTERVAL
-    first_line = poem.split("\n")[0]
-    t = TEXT_DELAY + len(first_line) * CHAR_INTERVAL + 0.5
+def extract_thumbnail(video_path, thumb_path, poem_lines):
+    """
+    サムネイル抽出：1行目が出終わった直後（行間ポーズ前）を狙う
+    t = TEXT_DELAY + (1行目の文字数 × CHAR_INTERVAL) + CHAR_FADEIN_SEC + 0.3
+    """
+    from config import TEXT_DELAY, CHAR_INTERVAL, CHAR_FADEIN_SEC
+    first_line = poem_lines[0]
+    # 1行目の最後の文字が出終わる時刻
+    t = TEXT_DELAY + len(first_line) * CHAR_INTERVAL + CHAR_FADEIN_SEC + 0.3
     cmd = [
         "ffmpeg", "-y",
         "-ss", str(t),
@@ -594,7 +590,7 @@ def extract_thumbnail(video_path, thumb_path, poem):
         thumb_path
     ]
     subprocess.run(cmd, capture_output=True)
-    print(f"サムネイル抽出: {t:.1f}秒地点 → {thumb_path}", flush=True)
+    print(f"サムネイル抽出: {t:.1f}秒地点（1行目出終わり直後）→ {thumb_path}", flush=True)
 
 
 if __name__ == "__main__":
