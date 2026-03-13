@@ -1,4 +1,5 @@
 name: たまのためいき。BGMマスタリング
+
 on:
   workflow_dispatch:
     inputs:
@@ -12,15 +13,19 @@ on:
         description: 'スプレッドシートの行番号（省略時は自動バッチ）'
         required: false
   schedule:
-    - cron: '0 15 * * *'   # 毎日 0:00 JST（UTC 15:00）
+    - cron: '0 15 * * *'  # 毎日 0:00 JST
 
 jobs:
   mastering:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v4.2.2
+
+      - uses: actions/setup-python@v5.4.0
         with:
           python-version: '3.11'
           cache: 'pip'
