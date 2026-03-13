@@ -95,6 +95,7 @@ def main():
     filter_name = selection.get("filter_name", "写ルンです")
     emotion_tags_str = selection.get("emotion_tags", "")
     emotion_tags = [t.strip() for t in emotion_tags_str.split("・") if t.strip()]
+    se_list     = selection.get("se_list", [])
 
     poem_lines  = wrap_poem(poem)
     poem_wrapped = "\n".join(poem_lines)
@@ -125,7 +126,7 @@ def main():
     spreadsheet_id = os.environ.get("SPREADSHEET_ID", "")
 
     bgm_info = download_bgm(spreadsheet_id, creds_str)
-    se_paths = download_se(spreadsheet_id, creds_str, emotion_tags)
+    se_paths = download_se(spreadsheet_id, creds_str, se_list)
 
     merge_audio(output_path_silent, bgm_info["path"] if bgm_info else None, se_paths, output_path)
 
@@ -336,14 +337,12 @@ def download_bgm(spreadsheet_id, creds_json_str):
             print(f"BGM長さ: {duration:.1f}秒", flush=True)
 
             if duration <= CLIP_DURATION + 2.0:
-                # 短い音源はそのまま使う
                 start_sec = 0.0
                 print("短い音源のためそのまま使用", flush=True)
             else:
-                # RMSエネルギーで無音区間を除外した有効開始点を探す
                 hop_length = 512
                 rms = librosa.feature.rms(y=y, frame_length=2048, hop_length=hop_length)[0]
-                rms_threshold = np.percentile(rms, 20)  # 下位20%を無音とみなす
+                rms_threshold = np.percentile(rms, 20)
 
                 max_start = duration - CLIP_DURATION - 1.0
                 valid_starts = []
@@ -369,14 +368,12 @@ def download_bgm(spreadsheet_id, creds_json_str):
         work_dir = f"/tmp/bgm_work_{bgm['file_id'][:8]}"
         os.makedirs(work_dir, exist_ok=True)
 
-        # Step1: WAVに変換
         wav_path = f"{work_dir}/00_raw.wav"
         subprocess.run([
             "ffmpeg", "-y", "-i", raw_path,
             "-ar", "44100", "-ac", "2", wav_path
         ], capture_output=True)
 
-        # Step2: EQ
         eq_path = f"{work_dir}/01_eq.wav"
         subprocess.run([
             "ffmpeg", "-y", "-i", wav_path,
@@ -391,7 +388,6 @@ def download_bgm(spreadsheet_id, creds_json_str):
         ], capture_output=True)
         print("EQ完了", flush=True)
 
-        # Step3: コンプレッサー
         comp_path = f"{work_dir}/02_comp.wav"
         subprocess.run([
             "ffmpeg", "-y", "-i", eq_path,
@@ -400,7 +396,6 @@ def download_bgm(spreadsheet_id, creds_json_str):
         ], capture_output=True)
         print("コンプ完了", flush=True)
 
-        # Step4: サチュレーション
         sat_path = f"{work_dir}/03_sat.wav"
         subprocess.run([
             "ffmpeg", "-y", "-i", comp_path,
@@ -409,7 +404,6 @@ def download_bgm(spreadsheet_id, creds_json_str):
         ], capture_output=True)
         print("サチュレーション完了", flush=True)
 
-        # Step5: リバーブ
         rev_path = f"{work_dir}/04_rev.wav"
         subprocess.run([
             "ffmpeg", "-y", "-i", sat_path,
@@ -418,7 +412,6 @@ def download_bgm(spreadsheet_id, creds_json_str):
         ], capture_output=True)
         print("リバーブ完了", flush=True)
 
-        # Step6: ステレオ処理
         stereo_path = f"{work_dir}/05_stereo.wav"
         subprocess.run([
             "ffmpeg", "-y", "-i", rev_path,
@@ -427,7 +420,6 @@ def download_bgm(spreadsheet_id, creds_json_str):
         ], capture_output=True)
         print("ステレオ処理完了", flush=True)
 
-        # Step7: ラウドネス正規化（-14 LUFS）
         mastered_path = f"{work_dir}/06_mastered.wav"
         subprocess.run([
             "ffmpeg", "-y", "-i", stereo_path,
@@ -436,7 +428,6 @@ def download_bgm(spreadsheet_id, creds_json_str):
         ], capture_output=True)
         print("ラウドネス正規化完了", flush=True)
 
-        # Step8: 開始点から20秒切り出し＋フェード
         clip_path = f"{work_dir}/07_clip.wav"
         fade_out_start = CLIP_DURATION - 2.0
         subprocess.run([
@@ -457,62 +448,99 @@ def download_bgm(spreadsheet_id, creds_json_str):
         return None
 
 
-def download_se(spreadsheet_id, creds_json_str, emotion_tags):
-    """スプレッドシートから環境音を最大2本選んでダウンロード"""
-    if not spreadsheet_id or not creds_json_str:
+def download_se(spreadsheet_id, creds_json_str, se_list):
+    """
+    select_assets.pyで選ばれたse_listの音源をダウンロード。
+    - 音量チェック: -6 LUFS以上（大きすぎ）または -50 LUFS以下（小さすぎ）はスキップ
+    - 使用回数（K列）をインクリメント
+    - 最終使用日（M列）を記録
+    """
+    if not spreadsheet_id or not creds_json_str or not se_list:
         return []
     try:
         import google.oauth2.service_account as sa
         from googleapiclient.discovery import build
         from googleapiclient.http import MediaIoBaseDownload
+        from datetime import datetime, timezone, timedelta
+
+        JST = timezone(timedelta(hours=9))
+        now_jst = datetime.now(JST).isoformat()
 
         creds_info = json.loads(creds_json_str)
         creds = sa.Credentials.from_service_account_info(
             creds_info,
             scopes=[
-                "https://www.googleapis.com/auth/spreadsheets.readonly",
+                "https://www.googleapis.com/auth/spreadsheets",
                 "https://www.googleapis.com/auth/drive.readonly"
             ]
         )
         sheets = build("sheets", "v4", credentials=creds)
         drive  = build("drive",  "v3", credentials=creds)
 
+        # 現在のシートデータを取得（使用回数読み取り用）
         result = sheets.spreadsheets().values().get(
             spreadsheetId=spreadsheet_id,
-            range="環境音!A:L"
+            range="環境音!A:M"
         ).execute()
-        rows = result.get("values", [])
-        if len(rows) <= 1:
-            print("環境音が登録されていません", flush=True)
-            return []
-
-        scored = []
-        for row in rows[1:]:
-            if len(row) < 2 or not row[1]:
-                continue
-            file_id   = row[1]
-            file_name = row[0]
-            use_count = int(row[10]) if len(row) > 10 and row[10] else 0
-            se_tags   = [str(row[i]) for i in range(3, 9) if i < len(row) and row[i]]
-            score = sum(1 for et in emotion_tags if any(et in st for st in se_tags))
-            scored.append({"file_id": file_id, "file_name": file_name, "score": score, "use_count": use_count})
-
-        scored.sort(key=lambda x: (-x["score"], x["use_count"]))
+        all_rows = result.get("values", [])
 
         se_paths = []
-        for se in scored[:2]:
-            ext = os.path.splitext(se["file_name"])[1]
-            output_path = f"/tmp/se_{se['file_id'][:8]}{ext}"
+        for se in se_list:
+            file_id   = se.get("file_id", "")
+            file_name = se.get("file_name", "")
+            row_idx   = se.get("row_idx")
+            if not file_id:
+                continue
+
+            # ダウンロード
+            ext = os.path.splitext(file_name)[1] or ".wav"
+            output_path = f"/tmp/se_{file_id[:8]}{ext}"
             if not os.path.exists(output_path):
-                print(f"環境音をダウンロード中: {se['file_name']}", flush=True)
-                request = drive.files().get_media(fileId=se["file_id"])
+                print(f"環境音をダウンロード中: {file_name}", flush=True)
+                request = drive.files().get_media(fileId=file_id)
                 with open(output_path, "wb") as f:
                     downloader = MediaIoBaseDownload(f, request)
                     done = False
                     while not done:
                         _, done = downloader.next_chunk()
+                print(f"環境音ダウンロード完了: {file_name}", flush=True)
+
+            # 音量チェック
+            lufs = measure_rms_lufs(output_path)
+            print(f"環境音 LUFS確認: {file_name} = {lufs:.1f} LUFS", flush=True)
+            if lufs > -6.0:
+                print(f"  ⚠ 音量大きすぎ（{lufs:.1f} LUFS）スキップ: {file_name}", flush=True)
+                os.remove(output_path)
+                continue
+            if lufs < -50.0:
+                print(f"  ⚠ 音量小さすぎ（{lufs:.1f} LUFS）スキップ: {file_name}", flush=True)
+                os.remove(output_path)
+                continue
+
             se_paths.append(output_path)
-            print(f"環境音ダウンロード完了: {se['file_name']}", flush=True)
+
+            # 使用回数・最終使用日を更新
+            if row_idx:
+                try:
+                    row_data = all_rows[row_idx - 1] if row_idx - 1 < len(all_rows) else []
+                    current_count = int(row_data[10]) if len(row_data) > 10 and row_data[10] else 0
+                    # K列（11列目）: 使用回数
+                    sheets.spreadsheets().values().update(
+                        spreadsheetId=spreadsheet_id,
+                        range=f"環境音!K{row_idx}",
+                        valueInputOption="RAW",
+                        body={"values": [[current_count + 1]]}
+                    ).execute()
+                    # M列（13列目）: 最終使用日
+                    sheets.spreadsheets().values().update(
+                        spreadsheetId=spreadsheet_id,
+                        range=f"環境音!M{row_idx}",
+                        valueInputOption="RAW",
+                        body={"values": [[now_jst]]}
+                    ).execute()
+                    print(f"  環境音記録更新: {file_name} 使用回数{current_count}→{current_count+1}", flush=True)
+                except Exception as e:
+                    print(f"  環境音記録更新エラー（スキップ）: {e}", flush=True)
 
         return se_paths
 
