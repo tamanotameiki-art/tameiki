@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 tameiki/generate.py — メイン動画生成エンジン
-全モジュールを統合して20秒の縦型動画を生成する
+全モジュールを統合して縦型動画を生成する
 動画素材の場合はフレームを順番に使用（Ken Burnsはスキップ）
+詩の長さに合わせて動画尺を動的に決定する
 """
 import os
 import sys
@@ -16,7 +17,7 @@ from config import (
     W, H, FPS, FONT_PATH, FONT_IDX,
     C_MIST, C_TEXT, C_DARK,
     INTRO_DUR, TEXT_DELAY, ENDING_START, TOTAL_SEC,
-    CHAR_FADEIN_SEC,
+    CHAR_FADEIN_SEC, CHAR_INTERVAL, LINE_PAUSE_SEC,
 )
 from easing import ease_io, ease_out, ease_organic, clamp, random_jitter
 from filters import apply_filter
@@ -24,8 +25,30 @@ from background import (
     prepare_bg, ken_burns,
     is_video_file, extract_video_frames, load_video_frame, crop_and_resize
 )
-from text import draw_text_layer, calc_layout, get_appear_pattern
+from text import draw_text_layer, calc_layout, get_appear_pattern, build_char_timings
 from ending import draw_ending, get_ending_pattern
+
+
+def calc_total_sec(lines, fps=FPS):
+    """
+    詩の全文字が出終わる時刻を計算し、動的な動画尺を返す。
+    最後の文字出現 + CHAR_FADEIN_SEC + 余韻3秒 + エンディング2秒
+    最低 TOTAL_SEC（20秒）は確保。
+    """
+    timings = build_char_timings(lines, fps)
+    if not timings:
+        return TOTAL_SEC
+
+    # 最後の文字の出現開始フレーム
+    last_delay = max(t[3] for t in timings)
+    # 最後の文字がフェードイン完了する時刻（秒）
+    last_char_end_sec = TEXT_DELAY + (last_delay + int(CHAR_FADEIN_SEC * fps)) / fps
+    # 余韻3秒 + エンディング2秒
+    needed_sec = last_char_end_sec + 3.0 + 2.0
+
+    result = max(TOTAL_SEC, needed_sec)
+    print(f"動画尺計算: 最終文字={last_char_end_sec:.1f}秒 → 総尺={result:.1f}秒", flush=True)
+    return result
 
 
 def generate(
@@ -35,14 +58,25 @@ def generate(
     emotion_tags   = None,
     output_path    = "/mnt/user-data/outputs/tameiki_v4.mp4",
     frames_dir     = "/home/claude/tameiki_frames",
-    total_sec      = TOTAL_SEC,
+    total_sec      = None,   # Noneの場合は詩の長さから動的計算
     seed           = 42,
 ):
     if emotion_tags is None:
         emotion_tags = []
 
+    lines = text.split("\n")
+
+    # ===== 動画尺を動的決定 =====
+    if total_sec is None:
+        total_sec = calc_total_sec(lines)
+
+    # エンディング開始 = 最後の文字出終わり + 余韻3秒
+    timings = build_char_timings(lines)
+    last_delay = max(t[3] for t in timings) if timings else 0
+    last_char_end_sec = TEXT_DELAY + (last_delay + int(CHAR_FADEIN_SEC * FPS)) / FPS
+    ending_start = last_char_end_sec + 3.0
+
     total_frames = int(FPS * total_sec)
-    lines        = text.split("\n")
 
     # ===== フォント =====
     font_size, char_gap, line_gap, use_extended = calc_layout(lines)
@@ -50,9 +84,10 @@ def generate(
     font_end  = ImageFont.truetype(FONT_PATH, 40,        index=FONT_IDX)
 
     # ===== タイムライン =====
-    T_INTRO_END  = int(INTRO_DUR    * FPS)
-    T_TEXT_START = int(TEXT_DELAY   * FPS)
-    T_END_START  = int(ENDING_START * FPS)
+    T_INTRO_END  = int(INTRO_DUR      * FPS)
+    T_TEXT_START = int(TEXT_DELAY     * FPS)
+    T_END_START  = int(ending_start   * FPS)
+
     T_FADEIN     = int(CHAR_FADEIN_SEC * FPS)
 
     # ===== 出現パターン =====
@@ -65,7 +100,8 @@ def generate(
     print(f"感情タグ　: {emotion_tags}")
     print(f"出現演出　: {appear_pattern} / エンディング: {ending_pattern}")
     print(f"レイアウト: size={font_size}px char_gap={char_gap}px line_gap={line_gap}px")
-    print(f"総フレーム: {total_frames}枚 ({total_sec}秒)")
+    print(f"タイムライン: テキスト開始={TEXT_DELAY}秒 エンディング={ending_start:.1f}秒 総尺={total_sec:.1f}秒")
+    print(f"総フレーム: {total_frames}枚 ({total_sec:.1f}秒)")
     print(f"{'='*50}")
 
     # ===== 背景準備 =====
@@ -74,11 +110,9 @@ def generate(
     bg_frames_dir = frames_dir + "_bg"
 
     if use_video:
-        # 動画：全フレームを事前展開
         extract_video_frames(bg_path, bg_frames_dir, total_frames, FPS)
-        base_bg = None  # 動画の場合はフレームごとに読み込む
+        base_bg = None
     else:
-        # 静止画：1枚読み込んでKen Burns
         base_bg = prepare_bg(bg_path)
 
     # ===== フレーム生成 =====
@@ -112,7 +146,20 @@ def generate(
         # --- テキスト描画 ---
         if T_TEXT_START <= fi < T_END_START:
             elapsed   = fi - T_TEXT_START
-            # 動画の場合はフレームそのままをbg_arrに使う
+            bg_arr    = np.array(bg)
+            txt_layer = draw_text_layer(
+                lines, elapsed, font_main,
+                appear_pattern=appear_pattern,
+                bg_arr=bg_arr,
+                fps=FPS,
+                seed=seed,
+            )
+            frame = Image.alpha_composite(frame, txt_layer)
+
+        # --- 余韻フェーズ（最終文字出終わり〜エンディング開始）---
+        # テキストを保持したまま静かに漂う
+        if fi >= T_END_START - int(0.5 * FPS) and fi < T_END_START:
+            elapsed   = fi - T_TEXT_START
             bg_arr    = np.array(bg)
             txt_layer = draw_text_layer(
                 lines, elapsed, font_main,
