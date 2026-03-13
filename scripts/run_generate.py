@@ -108,7 +108,13 @@ def main():
     output_path        = "/tmp/tameiki_output.mp4"
     thumbnail_path     = "/tmp/tameiki_thumb.jpg"
     print(f"動画生成開始: {filter_name} / {emotion_tags}", flush=True)
-    from generate import generate
+
+    # generate()は動画尺を動的計算して返すため、実際の尺を取得する
+    from generate import generate, calc_total_sec
+    from config import FPS, TEXT_DELAY, CHAR_FADEIN_SEC
+
+    actual_total_sec = calc_total_sec(poem_lines)
+
     success = generate(
         text         = poem_wrapped,
         bg_path      = bg_path,
@@ -117,6 +123,7 @@ def main():
         output_path  = output_path_silent,
         frames_dir   = "/tmp/tameiki_frames",
         seed         = hash(poem + filter_name) % 10000,
+        total_sec    = actual_total_sec,
     )
     if not success:
         print("動画生成失敗", flush=True)
@@ -126,10 +133,11 @@ def main():
     creds_str      = os.environ.get("GOOGLE_CREDENTIALS", "")
     spreadsheet_id = os.environ.get("SPREADSHEET_ID", "")
 
-    bgm_info = download_bgm(spreadsheet_id, creds_str)
+    bgm_info = download_bgm(spreadsheet_id, creds_str, actual_total_sec)
     se_paths = download_se(spreadsheet_id, creds_str, se_list)
 
-    merge_audio(output_path_silent, bgm_info["path"] if bgm_info else None, se_paths, output_path)
+    merge_audio(output_path_silent, bgm_info["path"] if bgm_info else None,
+                se_paths, output_path, video_duration=actual_total_sec)
 
     extract_thumbnail(output_path, thumbnail_path, poem_lines)
 
@@ -141,7 +149,7 @@ def main():
     print(f"thumbnail_path={thumbnail_path}")
     print(f"video_url={output_path}")
     print(f"poem_first_line={poem_first_line}")
-    print(f"poem_wrapped={poem_wrapped}")   # ← 追加：GITHUB_OUTPUTに渡す用
+    print(f"poem_wrapped={poem_wrapped}")
     print(f"bgm_title={bgm_info['title'] if bgm_info else ''}")
 
     with open(os.environ.get("GITHUB_ENV", "/dev/null"), "a") as f:
@@ -176,8 +184,8 @@ def merge_audio(video_path, bgm_path, se_paths, output_path, video_duration=20.0
     """
     動画にBGM＋環境音を合成する。
     BGM: -20 LUFS相当（詩の邪魔をしない音量）
-    環境音: -28 LUFS相当（うっすら漂う程度）
-    BGMはdownload_bgm内で既に20秒に切り出し済みのためループなし。
+    環境音: -32 LUFS相当（さりげなく漂う程度）
+    BGMはdownload_bgm内で実際の動画尺に合わせて切り出し済み。
     """
     import shutil
 
@@ -208,7 +216,7 @@ def merge_audio(video_path, bgm_path, se_paths, output_path, video_duration=20.0
         if not se_path or not os.path.exists(se_path):
             continue
         se_lufs = measure_rms_lufs(se_path)
-        se_vol  = calc_volume_factor(se_lufs, -28.0)
+        se_vol  = calc_volume_factor(se_lufs, -32.0)   # -28→-32に変更（より小さく）
         label   = f"se{i+1}"
         print(f"環境音{i+1} LUFS: {se_lufs:.1f} → volume={se_vol:.3f}", flush=True)
         inputs += ["-stream_loop", "-1", "-i", se_path]
@@ -250,7 +258,7 @@ def merge_audio(video_path, bgm_path, se_paths, output_path, video_duration=20.0
         print(f"音声合成完了: BGM×1 + 環境音×{len(se_paths)}", flush=True)
 
 
-def download_bgm(spreadsheet_id, creds_json_str):
+def download_bgm(spreadsheet_id, creds_json_str, clip_duration=20.0):
     """スプレッドシートからBGMをランダム選択・マスタリング・切り出しして返す"""
     if not spreadsheet_id or not creds_json_str:
         return None
@@ -327,7 +335,6 @@ def download_bgm(spreadsheet_id, creds_json_str):
                     _, done = downloader.next_chunk()
             print(f"BGMダウンロード完了: {raw_path}", flush=True)
 
-        CLIP_DURATION = 20.0
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
@@ -335,7 +342,7 @@ def download_bgm(spreadsheet_id, creds_json_str):
             duration = librosa.get_duration(y=y, sr=sr)
             print(f"BGM長さ: {duration:.1f}秒", flush=True)
 
-            if duration <= CLIP_DURATION + 2.0:
+            if duration <= clip_duration + 2.0:
                 start_sec = 0.0
                 print("短い音源のためそのまま使用", flush=True)
             else:
@@ -343,7 +350,7 @@ def download_bgm(spreadsheet_id, creds_json_str):
                 rms = librosa.feature.rms(y=y, frame_length=2048, hop_length=hop_length)[0]
                 rms_threshold = np.percentile(rms, 20)
 
-                max_start = duration - CLIP_DURATION - 1.0
+                max_start = duration - clip_duration - 1.0
                 valid_starts = []
                 for t in np.arange(0.0, max_start, 0.5):
                     frame_start = int(t * sr / hop_length)
@@ -426,17 +433,18 @@ def download_bgm(spreadsheet_id, creds_json_str):
         ], capture_output=True)
         print("ラウドネス正規化完了", flush=True)
 
+        # 実際の動画尺に合わせて切り出し
         clip_path = f"{work_dir}/07_clip.wav"
-        fade_out_start = CLIP_DURATION - 2.0
+        fade_out_start = clip_duration - 2.0
         subprocess.run([
             "ffmpeg", "-y",
             "-ss", str(start_sec),
-            "-t", str(CLIP_DURATION),
+            "-t", str(clip_duration),
             "-i", mastered_path,
             "-af", f"afade=t=in:st=0:d=1.5,afade=t=out:st={fade_out_start}:d=2.0",
             clip_path
         ], capture_output=True)
-        print(f"切り出し完了: {start_sec:.1f}秒〜{start_sec + CLIP_DURATION:.1f}秒", flush=True)
+        print(f"切り出し完了: {start_sec:.1f}秒〜{start_sec + clip_duration:.1f}秒", flush=True)
 
         bgm["path"] = clip_path
         return bgm
@@ -574,12 +582,11 @@ def download_video_asset(file_id):
 
 def extract_thumbnail(video_path, thumb_path, poem_lines):
     """
-    サムネイル抽出：1行目が出終わった直後（行間ポーズ前）を狙う
+    サムネイル抽出：1行目が出終わった直後を狙う
     t = TEXT_DELAY + (1行目の文字数 × CHAR_INTERVAL) + CHAR_FADEIN_SEC + 0.3
     """
     from config import TEXT_DELAY, CHAR_INTERVAL, CHAR_FADEIN_SEC
     first_line = poem_lines[0]
-    # 1行目の最後の文字が出終わる時刻
     t = TEXT_DELAY + len(first_line) * CHAR_INTERVAL + CHAR_FADEIN_SEC + 0.3
     cmd = [
         "ffmpeg", "-y",
