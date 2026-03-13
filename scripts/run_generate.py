@@ -109,7 +109,6 @@ def main():
     thumbnail_path     = "/tmp/tameiki_thumb.jpg"
     print(f"動画生成開始: {filter_name} / {emotion_tags}", flush=True)
 
-    # generate()は動画尺を動的計算して返すため、実際の尺を取得する
     from generate import generate, calc_total_sec
     from config import FPS, TEXT_DELAY, CHAR_FADEIN_SEC
 
@@ -139,7 +138,7 @@ def main():
     merge_audio(output_path_silent, bgm_info["path"] if bgm_info else None,
                 se_paths, output_path, video_duration=actual_total_sec)
 
-    extract_thumbnail(output_path, thumbnail_path, poem_lines)
+    generate_thumbnail(bg_path, thumbnail_path, poem_first_line, filter_name)
 
     if bgm_info and bgm_info.get("row"):
         increment_bgm_use_count(spreadsheet_id, creds_str, bgm_info["row"], bgm_info["use_count"])
@@ -155,6 +154,108 @@ def main():
     with open(os.environ.get("GITHUB_ENV", "/dev/null"), "a") as f:
         f.write(f"VIDEO_URL={output_path}\n")
         f.write(f"BGM_TITLE={bgm_info['title'] if bgm_info else ''}\n")
+
+
+def generate_thumbnail(bg_path, thumb_path, first_line, filter_name):
+    """
+    サムネイルを静止画として生成。
+    背景の中間フレームにフィルターをかけ、1行目を縦書きで中央に大きく表示。
+    """
+    try:
+        from PIL import Image, ImageDraw, ImageFont, ImageFilter
+        import numpy as np
+        from config import W, H, FONT_PATH, FONT_IDX, C_TEXT, PUNCT_OFFSET, ROTATE_CHARS
+        from filters import apply_filter
+        from background import (
+            prepare_bg, is_video_file, extract_video_frames, load_video_frame
+        )
+
+        # 背景を1フレーム取得
+        if is_video_file(bg_path):
+            frames_dir = "/tmp/thumb_bgframes"
+            extract_video_frames(bg_path, frames_dir, total_frames=60, fps=24)
+            bg = load_video_frame(frames_dir, 30)  # 中間フレーム
+            import shutil
+            shutil.rmtree(frames_dir, ignore_errors=True)
+        else:
+            from background import prepare_bg, crop_and_resize
+            bg = prepare_bg(bg_path)
+
+        # フィルター適用
+        frame = apply_filter(bg, filter_name, frame_idx=0)
+        frame = frame.convert("RGBA")
+
+        # 少し暗くして文字を際立たせる
+        overlay = Image.new("RGBA", (W, H), (0, 0, 0, 60))
+        frame = Image.alpha_composite(frame, overlay)
+
+        # テキストレイヤー生成（縦書き・中央・大きめ）
+        txt_layer = draw_thumbnail_text(first_line)
+        frame = Image.alpha_composite(frame, txt_layer)
+
+        frame.convert("RGB").save(thumb_path, quality=95)
+        print(f"サムネイル生成完了: {thumb_path}", flush=True)
+
+    except Exception as e:
+        print(f"サムネイル生成エラー（スキップ）: {e}", flush=True)
+        # フォールバック：動画の最初のフレームから切り出し
+        cmd = [
+            "ffmpeg", "-y", "-ss", "4.0",
+            "-i", "/tmp/tameiki_output.mp4",
+            "-vframes", "1", "-q:v", "2", thumb_path
+        ]
+        subprocess.run(cmd, capture_output=True)
+
+
+def draw_thumbnail_text(first_line):
+    """
+    1行目を縦書きで画面中央に大きく描画したレイヤーを返す。
+    フォントサイズは動画より大きめ（最大72px）。
+    """
+    from PIL import Image, ImageDraw, ImageFont, ImageFilter
+    from config import W, H, FONT_PATH, FONT_IDX, C_TEXT, PUNCT_OFFSET, ROTATE_CHARS
+
+    layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d     = ImageDraw.Draw(layer)
+
+    # フォントサイズ：文字数に応じて調整（大きめに）
+    n_chars   = len(first_line)
+    font_size = max(48, min(72, int(720 / max(n_chars, 5))))
+    char_gap  = int(font_size * 1.25)
+
+    font = ImageFont.truetype(FONT_PATH, font_size, index=FONT_IDX)
+
+    # 縦書き中央配置
+    total_h = (n_chars - 1) * char_gap + font_size
+    sx = W // 2  # 列は1列なので中央
+    sy = H // 2 - total_h // 2
+
+    for ci, ch in enumerate(first_line):
+        x = sx - font_size // 2
+        y = sy + ci * char_gap
+
+        # 句読点オフセット
+        if ch in PUNCT_OFFSET:
+            dx_ratio, dy_ratio = PUNCT_OFFSET[ch]
+            x += int(font_size * dx_ratio)
+            y += int(font_size * dy_ratio)
+
+        # 延ばし棒・ダッシュ系は回転
+        if ch in ROTATE_CHARS:
+            tmp = Image.new("RGBA", (font_size + 10, font_size + 10), (0, 0, 0, 0))
+            td  = ImageDraw.Draw(tmp)
+            td.text((0, 0), ch, font=font, fill=(*C_TEXT, 255))
+            rotated = tmp.rotate(90, expand=True)
+            layer.paste(rotated, (x, y), rotated)
+        else:
+            # テキストシャドウ（読みやすさ向上）
+            d.text((x + 2, y + 2), ch, font=font, fill=(0, 0, 0, 120))
+            d.text((x, y), ch, font=font, fill=(*C_TEXT, 255))
+
+    # ほんのりグロー
+    glow = layer.filter(ImageFilter.GaussianBlur(radius=3))
+    result = Image.alpha_composite(glow, layer)
+    return result
 
 
 def increment_bgm_use_count(spreadsheet_id, creds_json_str, row, current_count):
@@ -185,7 +286,6 @@ def merge_audio(video_path, bgm_path, se_paths, output_path, video_duration=20.0
     動画にBGM＋環境音を合成する。
     BGM: -20 LUFS相当（詩の邪魔をしない音量）
     環境音: -32 LUFS相当（さりげなく漂う程度）
-    BGMはdownload_bgm内で実際の動画尺に合わせて切り出し済み。
     """
     import shutil
 
@@ -216,7 +316,7 @@ def merge_audio(video_path, bgm_path, se_paths, output_path, video_duration=20.0
         if not se_path or not os.path.exists(se_path):
             continue
         se_lufs = measure_rms_lufs(se_path)
-        se_vol  = calc_volume_factor(se_lufs, -32.0)   # -28→-32に変更（より小さく）
+        se_vol  = calc_volume_factor(se_lufs, -32.0)
         label   = f"se{i+1}"
         print(f"環境音{i+1} LUFS: {se_lufs:.1f} → volume={se_vol:.3f}", flush=True)
         inputs += ["-stream_loop", "-1", "-i", se_path]
@@ -433,7 +533,6 @@ def download_bgm(spreadsheet_id, creds_json_str, clip_duration=20.0):
         ], capture_output=True)
         print("ラウドネス正規化完了", flush=True)
 
-        # 実際の動画尺に合わせて切り出し
         clip_path = f"{work_dir}/07_clip.wav"
         fade_out_start = clip_duration - 2.0
         subprocess.run([
@@ -578,26 +677,6 @@ def download_video_asset(file_id):
             status, done = downloader.next_chunk()
 
     return output_path
-
-
-def extract_thumbnail(video_path, thumb_path, poem_lines):
-    """
-    サムネイル抽出：1行目が出終わった直後を狙う
-    t = TEXT_DELAY + (1行目の文字数 × CHAR_INTERVAL) + CHAR_FADEIN_SEC + 0.3
-    """
-    from config import TEXT_DELAY, CHAR_INTERVAL, CHAR_FADEIN_SEC
-    first_line = poem_lines[0]
-    t = TEXT_DELAY + len(first_line) * CHAR_INTERVAL + CHAR_FADEIN_SEC + 0.3
-    cmd = [
-        "ffmpeg", "-y",
-        "-ss", str(t),
-        "-i", video_path,
-        "-vframes", "1",
-        "-q:v", "2",
-        thumb_path
-    ]
-    subprocess.run(cmd, capture_output=True)
-    print(f"サムネイル抽出: {t:.1f}秒地点（1行目出終わり直後）→ {thumb_path}", flush=True)
 
 
 if __name__ == "__main__":
