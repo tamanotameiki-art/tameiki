@@ -215,7 +215,7 @@ def draw_thumbnail_text(first_line):
     フォントサイズは動画より大きめ（最大72px）。
     """
     from PIL import Image, ImageDraw, ImageFont, ImageFilter
-    from config import W, H, FONT_PATH, FONT_IDX, C_TEXT, PUNCT_OFFSET, ROTATE_CHARS
+    from config import W, H, FONT_PATH, FONT_IDX, C_TEXT, PUNCT_OFFSET, ROTATE_CHARS, VERTICAL_GLYPH_MAP
 
     layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d     = ImageDraw.Draw(layer)
@@ -233,6 +233,7 @@ def draw_thumbnail_text(first_line):
     sy = H // 2 - total_h // 2
 
     for ci, ch in enumerate(first_line):
+        ch = VERTICAL_GLYPH_MAP.get(ch, ch)
         x = sx - font_size // 2
         y = sy + ci * char_gap
 
