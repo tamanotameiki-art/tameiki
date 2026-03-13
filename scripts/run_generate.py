@@ -197,7 +197,9 @@ def generate_thumbnail(bg_path, thumb_path, first_line, filter_name):
         print(f"サムネイル生成完了: {thumb_path}", flush=True)
 
     except Exception as e:
+        import traceback
         print(f"サムネイル生成エラー（スキップ）: {e}", flush=True)
+        traceback.print_exc()
         # フォールバック：動画の最初のフレームから切り出し
         cmd = [
             "ffmpeg", "-y", "-ss", "4.0",
