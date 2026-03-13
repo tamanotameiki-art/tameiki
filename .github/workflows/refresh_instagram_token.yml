@@ -8,6 +8,9 @@ on:
 jobs:
   refresh-token:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - name: Refresh Instagram Access Token
         id: refresh
