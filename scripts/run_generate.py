@@ -178,11 +178,11 @@ def generate_thumbnail(bg_path, thumb_path, first_line, filter_name):
             import shutil
             shutil.rmtree(frames_dir, ignore_errors=True)
         else:
-            from background import prepare_bg, crop_and_resize
+            from background import prepare_bg
             bg = prepare_bg(bg_path)
 
-        # フィルター適用
-        frame = apply_filter(bg, filter_name, frame_idx=0)
+        # フィルター適用（fiは0固定・静止画なので）
+        frame = apply_filter(bg, filter_name, 0)
         frame = frame.convert("RGBA")
 
         # 少し暗くして文字を際立たせる
