@@ -236,7 +236,7 @@ def upload_mastered_to_drive(mastered_path, clip_paths, original_name):
 
         creds = sa.Credentials.from_service_account_info(
             creds_json,
-            scopes=["https://www.googleapis.com/auth/drive.file"]
+            scopes=["https://www.googleapis.com/auth/drive"]
         )
         drive = build("drive", "v3", credentials=creds)
 
