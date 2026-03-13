@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from config import (
     W, H, FPS, FONT_PATH, FONT_IDX,
-    C_TEXT, PUNCT_OFFSET, ROTATE_CHARS,
+    C_TEXT, PUNCT_OFFSET, ROTATE_CHARS, VERTICAL_GLYPH_MAP,
     SAFE_TOP, SAFE_BOTTOM, SAFE_LEFT, SAFE_RIGHT,
     TEXT_APPEAR_PATTERNS, CHAR_FADEIN_SEC, CHAR_INTERVAL, LINE_PAUSE_SEC
 )
@@ -213,6 +213,7 @@ def draw_text_layer(lines, elapsed_frames, font, appear_pattern="mist",
     fadein_fr = int(CHAR_FADEIN_SEC * fps)
 
     for (li, ci, ch, delay) in timings:
+        ch = VERTICAL_GLYPH_MAP.get(ch, ch)
         e = elapsed_frames - delay
         if e <= 0:
             continue
