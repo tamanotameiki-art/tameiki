@@ -118,7 +118,7 @@ def select_poem(service, spreadsheet_id, conditions):
 
 
 def select_video(service, spreadsheet_id, poem_data, used_video_ids=None):
-    """動画素材を選択"""
+    """動画素材を選択（スコア上位からランダム選択）"""
     data = get_sheet_data(service, spreadsheet_id, "動画素材")
     if len(data) <= 1:
         return None
@@ -162,8 +162,19 @@ def select_video(service, spreadsheet_id, poem_data, used_video_ids=None):
     if not scored:
         return None
 
-    scored.sort(key=lambda x: (-x["score"], x["use_count"]))
-    return scored[0]
+    # スコア最高値のグループからランダム選択
+    # ただし使用回数が少ない素材を優遇（重み付き）
+    max_score = max(s["score"] for s in scored)
+    top_candidates = [s for s in scored if s["score"] == max_score]
+
+    # 使用回数が少ないほど選ばれやすい重み付き
+    min_count = min(c["use_count"] for c in top_candidates)
+    max_count = max(c["use_count"] for c in top_candidates)
+    if max_count == min_count:
+        return random.choice(top_candidates)
+    else:
+        weights = [1.0 / (c["use_count"] - min_count + 1) for c in top_candidates]
+        return random.choices(top_candidates, weights=weights, k=1)[0]
 
 
 def select_filter(poem_tags, video_tags=None, used_filters=None):
@@ -208,7 +219,7 @@ def select_filter(poem_tags, video_tags=None, used_filters=None):
 
 
 def select_se(service, spreadsheet_id, poem_tags, filter_name):
-    """環境音を選択（最大3レイヤー）"""
+    """環境音を選択（フィルター優先＋使用回数少ない順にランダム）"""
     data = get_sheet_data(service, spreadsheet_id, "環境音")
     if len(data) <= 1:
         return []
@@ -235,15 +246,29 @@ def select_se(service, spreadsheet_id, poem_tags, filter_name):
     selected  = []
 
     for se_kind, layer in preferred:
+        # 該当する種類の音源を全て集める
         matches = [r for r in rows if len(r) > 2 and se_kind in str(r[2])]
-        if matches:
+        if not matches:
+            continue
+        # 使用回数が少ないものを優遇（重み付きランダム）
+        use_counts = []
+        for r in matches:
+            count = int(r[10]) if len(r) > 10 and r[10] else 0
+            use_counts.append(count)
+        min_count = min(use_counts)
+        max_count = max(use_counts)
+        if max_count == min_count:
             chosen = random.choice(matches)
-            selected.append({
-                "file_id":   chosen[1] if len(chosen) > 1 else "",
-                "file_name": chosen[0] if chosen else "",
-                "kind":      se_kind,
-                "layer":     layer,
-            })
+        else:
+            weights = [1.0 / (c - min_count + 1) for c in use_counts]
+            chosen = random.choices(matches, weights=weights, k=1)[0]
+
+        selected.append({
+            "file_id":   chosen[1] if len(chosen) > 1 else "",
+            "file_name": chosen[0] if chosen else "",
+            "kind":      se_kind,
+            "layer":     layer,
+        })
         if len(selected) >= 3:
             break
 
