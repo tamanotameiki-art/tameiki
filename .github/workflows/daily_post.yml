@@ -17,18 +17,18 @@ on:
         default: 'false'
 
 jobs:
-  # ===== 投稿ジョブ（毎日21:00 JST）=====
   generate_and_post:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-      # ===== セットアップ =====
       - name: リポジトリをチェックアウト
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       - name: Python セットアップ
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.4.0
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -53,7 +53,6 @@ jobs:
         run: |
           sudo apt-get install -y ffmpeg
 
-      # ===== 当日情報の取得 =====
       - name: 当日情報を取得
         id: conditions
         env:
@@ -62,7 +61,6 @@ jobs:
           python3 scripts/get_conditions.py 2>&1 | tee /tmp/conditions_log.txt
           grep "^[a-zA-Z_]*=" /tmp/conditions_log.txt >> $GITHUB_OUTPUT
 
-      # ===== 素材選択 =====
       - name: 素材を選択
         id: selection
         env:
@@ -76,7 +74,6 @@ jobs:
           python3 scripts/select_assets.py 2>&1 | tee /tmp/selection_log.txt
           grep "^[a-zA-Z_]*=" /tmp/selection_log.txt >> $GITHUB_OUTPUT
 
-      # ===== 動画生成 =====
       - name: 動画を生成
         id: generate
         env:
@@ -88,7 +85,6 @@ jobs:
           python3 scripts/run_generate.py 2>&1 | tee /tmp/generate_log.txt
           grep "^[a-zA-Z_][a-zA-Z0-9_]*=" /tmp/generate_log.txt >> $GITHUB_OUTPUT || true
 
-      # ===== キャプション生成 =====
       - name: SNS別キャプションを生成
         id: captions
         env:
@@ -102,7 +98,6 @@ jobs:
           python3 scripts/generate_captions.py 2>&1 | tee /tmp/captions_log.txt
           grep "^[a-zA-Z_]*=" /tmp/captions_log.txt >> $GITHUB_OUTPUT
 
-      # ===== 各SNSへ投稿 =====
       - name: YouTubeに投稿
         if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
         id: post_youtube
@@ -165,7 +160,6 @@ jobs:
         run: |
           python3 scripts/prepare_tiktok.py
 
-      # ===== 静止画生成（翌朝投稿用）=====
       - name: 静止画を生成
         if: steps.generate.outputs.success == 'true'
         env:
@@ -174,7 +168,6 @@ jobs:
         run: |
           python3 scripts/generate_images.py
 
-      # ===== 投稿履歴を記録 =====
       - name: 投稿履歴を記録
         if: always()
         env:
@@ -192,7 +185,6 @@ jobs:
         run: |
           python3 scripts/record_history.py
 
-      # ===== LINE通知 =====
       - name: 投稿完了通知
         if: steps.generate.outputs.success == 'true' && inputs.dry_run != 'true'
         env:
@@ -214,7 +206,6 @@ jobs:
             --type error \
             --message "投稿に失敗しました。確認してください。"
 
-      # ===== 動画キャッシュ管理 =====
       - name: 古いキャッシュを削除
         if: always()
         env:
