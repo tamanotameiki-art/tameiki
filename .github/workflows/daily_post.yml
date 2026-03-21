@@ -52,7 +52,8 @@ jobs:
 
       - name: ffmpegをインストール
         run: |
-          sudo apt-get install -y ffmpeg
+          sudo apt-get update
+          sudo apt-get install -y --fix-missing ffmpeg
 
       - name: 当日情報を取得
         id: conditions
@@ -174,7 +175,7 @@ jobs:
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
-          SELECTION: ${{ steps.selection.outputs.selection_json }}
+          SELECTION: ${{ steps.selection.outputs.selection_json || '{}' }}
           POST_IDS: |
             {
               "youtube":   "${{ steps.post_youtube.outputs.video_id }}",
