@@ -22,12 +22,13 @@ C_WHITE  = (255, 250, 220)
 # ===== タイムライン =====
 INTRO_DUR    = 2.0
 TEXT_DELAY   = 3.5
-CHAR_INTERVAL= 0.20
+CHAR_INTERVAL= 0.28   # ★ 0.20→0.28秒：文字の出現間隔を少し広げてゆったりさせる
 ENDING_START = 18.0
 TOTAL_SEC    = 20.0
 
 # ===== テキストアニメーション =====
-CHAR_FADEIN_SEC = 0.28
+CHAR_FADEIN_SEC = 1.20   # ★ 0.28→1.20秒：じわぁと滲み出る時間を大幅に延ばす
+                          #   CHAR_INTERVAL(0.28)より長いため複数文字が重なって出てくる
 LINE_PAUSE_SEC  = [1.6, 2.8]
 
 # ===== SNS安全エリア =====
@@ -65,10 +66,7 @@ VERTICAL_GLYPH_MAP = {
 # ===== フィルター定義（全20種） =====
 FILTERS = {
 
-    # ===== 既存フィルター（一部強化） =====
-
     "写ルンです": {
-        # ★ 光漏れを追加
         "tags": ["哀愁", "温かい", "夜", "曇", "秋", "冬"],
         "grain": 14,
         "color_matrix": {
@@ -80,12 +78,11 @@ FILTERS = {
         "chroma_aber": 1.2,
         "bloom":      0.15,
         "halation":   0.14,
-        "light_leak": True,       # ★ 光漏れ追加
+        "light_leak": True,
         "leak_strength": 0.45,
     },
 
     "VHS": {
-        # ★ 輝度ノイズ帯・カラーブリードを追加
         "tags": ["哀愁", "孤独", "夜", "都市", "雨", "冬"],
         "grain": 18,
         "color_matrix": {
@@ -99,14 +96,13 @@ FILTERS = {
         "halation":   0.06,
         "scanline":   True,
         "gate_glitch": True,
-        "vhs_noise_band":   True,   # ★ 輝度ノイズ帯追加
+        "vhs_noise_band":   True,
         "noise_band_strength": 0.30,
-        "vhs_color_bleed":  True,   # ★ カラーブリード追加
+        "vhs_color_bleed":  True,
         "color_bleed_strength": 5,
     },
 
     "燃えたフィルム": {
-        # ★ 内部有機焼けを追加
         "tags": ["哀愁", "孤独", "空虚", "夜", "秋", "冬", "曇"],
         "grain": 20,
         "color_matrix": {
@@ -119,7 +115,7 @@ FILTERS = {
         "bloom":      0.20,
         "halation":   0.18,
         "burn_edges": True,
-        "film_burn_organic": True,  # ★ 内部有機焼け追加
+        "film_burn_organic": True,
         "burn_strength": 0.55,
     },
 
@@ -139,7 +135,6 @@ FILTERS = {
     },
 
     "サイレント映画": {
-        # ★ フリッカー・縦揺れ・パーフォレーションを追加
         "tags": ["静謐", "孤独", "空虚", "深夜", "冬"],
         "grain": 22,
         "color_matrix": None,
@@ -150,10 +145,10 @@ FILTERS = {
         "bloom":      0.10,
         "halation":   0.05,
         "monochrome": True,
-        "flicker":    True,         # ★ フリッカー追加
+        "flicker":    True,
         "flicker_strength": 0.07,
-        "vertical_jitter": True,    # ★ 縦揺れ追加
-        "perforation": True,        # ★ 送り穴影追加
+        "vertical_jitter": True,
+        "perforation": True,
     },
 
     "ゴールデンアワー": {
@@ -291,10 +286,7 @@ FILTERS = {
         "halation":   0.08,
     },
 
-    # ===== 新規フィルター（6種） =====
-
     "古い映写機": {
-        # 映写機のフィルムが回る感覚。明滅・縦揺れ・送り穴。
         "tags": ["孤独", "哀愁", "静謐", "深夜", "冬", "曇"],
         "grain": 28,
         "color_matrix": {
@@ -314,7 +306,6 @@ FILTERS = {
     },
 
     "光漏れフィルム": {
-        # フレームの端から強い光漏れ。焼き付けた温度感。
         "tags": ["温かい", "哀愁", "希望", "夕方", "夏", "秋"],
         "grain": 16,
         "color_matrix": {
@@ -327,11 +318,10 @@ FILTERS = {
         "bloom":      0.22,
         "halation":   0.20,
         "light_leak": True,
-        "leak_strength": 0.70,   # 写ルンですより強め
+        "leak_strength": 0.70,
     },
 
     "テープの記憶": {
-        # VHSより深く劣化。記憶の底から引っ張り出した映像感。
         "tags": ["哀愁", "孤独", "空虚", "深夜", "冬", "雨"],
         "grain": 26,
         "color_matrix": {
@@ -344,7 +334,7 @@ FILTERS = {
         "bloom":      0.06,
         "halation":   0.04,
         "vhs_noise_band":   True,
-        "noise_band_strength": 0.50,   # VHSより強め
+        "noise_band_strength": 0.50,
         "vhs_color_bleed":  True,
         "color_bleed_strength": 8,
         "scanline":   True,
@@ -353,14 +343,13 @@ FILTERS = {
     },
 
     "真夜中の体温": {
-        # 深夜3時の部屋。眠れない夜のスマホの光。
         "tags": ["孤独", "哀愁", "静謐", "空虚", "深夜", "冬"],
         "grain": 18,
         "color_matrix": {
             "R": (1.06, 0.05), "G": (0.88, 0.01), "B": (0.72, 0.0)
         },
         "contrast": 1.14,
-        "lift": 0.04,   # シャドウに暖色を乗せる
+        "lift": 0.04,
         "vignette": 245,
         "chroma_aber": 0.8,
         "bloom":      0.12,
@@ -368,7 +357,6 @@ FILTERS = {
     },
 
     "錆びた午後": {
-        # 夏の終わりの倦怠感。緑が抜けた錆色の世界。
         "tags": ["哀愁", "孤独", "夏", "秋", "昼", "曇"],
         "grain": 20,
         "color_matrix": {
@@ -384,7 +372,6 @@ FILTERS = {
     },
 
     "海底の夢": {
-        # 光がほとんど届かない深海。夢の中の夢。
         "tags": ["孤独", "空虚", "静謐", "深夜", "夏"],
         "grain": 14,
         "color_matrix": {
@@ -397,7 +384,7 @@ FILTERS = {
         "bloom":      0.18,
         "halation":   0.06,
         "ripple":     True,
-        "ripple_strength": 2.5,   # 水の底より強め
+        "ripple_strength": 2.5,
         "caustics":   True,
         "caustics_strength": 0.16,
         "soft_focus": True,
