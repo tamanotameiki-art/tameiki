@@ -14,6 +14,48 @@ from config import (
 from easing import ease_out, ease_io, ease_organic, clamp, random_jitter
 
 
+# ===== 文字色の自動判定 =====
+def get_text_color(bg_arr, sx, sy, total_w, total_h):
+    """
+    テキスト配置エリアの背景輝度を計算して文字色を返す。
+    明るい背景 → #2a1a0e（深いこげ茶・世界観に合う暗色）
+    暗い背景  → #f5e8d0（cream・現行の色）
+    bg_arr が None の場合はデフォルトの cream を返す。
+    """
+    if bg_arr is None:
+        return C_TEXT
+
+    # テキストエリアのクロップ範囲（余白を少し広めに取る）
+    pad = 20
+    x1 = max(0, sx - total_w - pad)
+    x2 = min(W, sx + pad)
+    y1 = max(0, sy - pad)
+    y2 = min(H, sy + total_h + pad)
+
+    if x2 <= x1 or y2 <= y1:
+        return C_TEXT
+
+    region = bg_arr[y1:y2, x1:x2]
+    if region.size == 0:
+        return C_TEXT
+
+    # RGB → 輝度（ITU-R BT.601）
+    if region.ndim == 3 and region.shape[2] >= 3:
+        luminance = (
+            0.299 * region[:, :, 0].mean() +
+            0.587 * region[:, :, 1].mean() +
+            0.114 * region[:, :, 2].mean()
+        )
+    else:
+        luminance = region.mean()
+
+    # 閾値140：白系背景ならこげ茶、暗い背景ならcream
+    if luminance > 140:
+        return (42, 26, 14)    # #2a1a0e — 深いこげ茶
+    else:
+        return C_TEXT          # #f5e8d0 — cream（デフォルト）
+
+
 # ===== レイアウト計算 =====
 def calc_layout(lines):
     """
@@ -186,7 +228,7 @@ def draw_text_layer(lines, elapsed_frames, font, appear_pattern="mist",
     縦書きテキストレイヤーを生成。
     elapsed_frames: テキスト表示開始からのフレーム数
     appear_pattern: "mist" | "rise" | "dissolve"
-    bg_arr: 背景画像配列（グロー色の参照用）
+    bg_arr: 背景画像配列（輝度判定・グロー色の参照用）
     """
     layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d     = ImageDraw.Draw(layer)
@@ -209,6 +251,9 @@ def draw_text_layer(lines, elapsed_frames, font, appear_pattern="mist",
         sx = min(sx, int(W * SAFE_RIGHT) - font_size)
         sy = max(sy, int(H * SAFE_TOP))
 
+    # ===== 背景輝度から文字色を自動判定 =====
+    text_color = get_text_color(bg_arr, sx, sy, total_w, total_h)
+
     timings   = build_char_timings(lines, fps)
     fadein_fr = int(CHAR_FADEIN_SEC * fps)
 
@@ -228,11 +273,11 @@ def draw_text_layer(lines, elapsed_frames, font, appear_pattern="mist",
         )
 
         if appear_pattern == "rise":
-            layer = appear_rise(layer, d, ch, x, y, font, C_TEXT, alpha)
+            layer = appear_rise(layer, d, ch, x, y, font, text_color, alpha)
         elif appear_pattern == "dissolve":
-            layer = appear_dissolve(layer, d, ch, x, y, font, C_TEXT, alpha)
+            layer = appear_dissolve(layer, d, ch, x, y, font, text_color, alpha)
         else:
-            layer = appear_mist(layer, d, ch, x, y, font, C_TEXT, alpha)
+            layer = appear_mist(layer, d, ch, x, y, font, text_color, alpha)
             d = ImageDraw.Draw(layer)
 
     return layer
