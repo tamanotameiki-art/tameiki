@@ -655,10 +655,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   for (let i = 0; i < DUST_N; i++) dust.push(newDust(true));
 
-  // 流れ星：重力で加速しながら弧を描く頭＋細かい尾の粒
-  let head = null, tail = [];
+  // 流れ星：加速しながら弧を描く頭＋連続したリボン状の尾＋下に散る微粒子
+  let head = null, path = [], sparks = [];
   function spawnMeteor() {
-    if (!head && CW > 0) {
+    if (!head && path.length === 0 && CW > 0) {
       const z = .7 + Math.random()*.3;
       const th = (22 + Math.random()*8) * Math.PI/180;
       const spd = 2.6 + Math.random()*1.1;
@@ -690,37 +690,73 @@ document.addEventListener("DOMContentLoaded", () => {
       head.vy += .05 * head.z;
       head.vx *= .999;
       head.x += head.vx; head.y += head.vy;
-      head.life -= .0085;
-      for (let i = 0; i < 3; i++) {
-        const pz = Math.max(.25, head.z + (Math.random()-.5)*.3);
-        tail.push({
-          x: head.x + (Math.random()-.5)*2.5, y: head.y + (Math.random()-.5)*2.5,
-          vx: -head.vx*.05 + (Math.random()-.5)*.35,
-          vy: -head.vy*.05 + (Math.random()-.5)*.35,
-          z: pz, life: 1, decay: .011 + Math.random()*.014,
-          size: .4 + pz*.9,
-          tw: Math.random()*Math.PI*2, tws: .3 + Math.random()*.45,
-          gold: Math.random() < .6
+      head.life -= .0075;
+      path.unshift({x: head.x, y: head.y});
+      if (path.length > 52) path.pop();
+      if (Math.random() < .6) {
+        sparks.push({
+          x: head.x + (Math.random()-.5)*6, y: head.y + 2 + Math.random()*5,
+          vx: (Math.random()-.5)*.3, vy: .1 + Math.random()*.25,
+          life: 1, decay: .02 + Math.random()*.02, size: .4 + Math.random()*.7,
+          tw: Math.random()*Math.PI*2, tws: .3 + Math.random()*.4,
+          green: Math.random() < .3
         });
       }
-      if (tail.length > 240) tail.splice(0, tail.length - 240);
+      if (sparks.length > 120) sparks.splice(0, sparks.length - 120);
+      if (head.life <= 0 || head.x < -20 || head.y > CH + 20) head = null;
+    } else if (path.length) {
+      path.pop();
+      if (path.length) path.pop();
+    }
+    // リボン状の尾（芯は黄白色、外へ橙〜赤橙、末端は細く消える）
+    if (path.length > 3) {
+      const n = path.length;
+      const hp = path[0], tp = path[n-1];
+      const fadeA = head ? Math.min(1, head.life * 1.5) : Math.min(1, path.length / 30);
+      const passes = [ {w: 8, a: .15}, {w: 3.4, a: .48} ];
+      for (const ps of passes) {
+        const g = mtx.createLinearGradient(hp.x, hp.y, tp.x, tp.y);
+        g.addColorStop(0, "rgba(255,246,220," + (ps.a * fadeA) + ")");
+        g.addColorStop(.45, "rgba(233,178,102," + (ps.a * .75 * fadeA) + ")");
+        g.addColorStop(1, "rgba(196,96,52,0)");
+        const L = [], R = [];
+        for (let i = 0; i < n; i++) {
+          const p = path[i];
+          const q = path[Math.min(i + 1, n - 1)], r = path[Math.max(i - 1, 0)];
+          let dx = q.x - r.x, dy = q.y - r.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const nx = -dy / len, ny = dx / len;
+          const wdt = ps.w * Math.pow(1 - i / n, 1.35);
+          L.push([p.x + nx * wdt, p.y + ny * wdt]);
+          R.push([p.x - nx * wdt, p.y - ny * wdt]);
+        }
+        mtx.fillStyle = g;
+        mtx.beginPath();
+        mtx.moveTo(L[0][0], L[0][1]);
+        for (let i = 1; i < n; i++) mtx.lineTo(L[i][0], L[i][1]);
+        for (let i = n - 1; i >= 0; i--) mtx.lineTo(R[i][0], R[i][1]);
+        mtx.closePath(); mtx.fill();
+      }
+    }
+    // 頭の輝き
+    if (head) {
       const ha = head.life < .2 ? head.life/.2 : (head.life > .92 ? (1-head.life)/.08 : 1);
-      const R = 7 * head.z + 2;
+      const R = 8 * head.z + 2;
       const g = mtx.createRadialGradient(head.x, head.y, 0, head.x, head.y, R);
-      g.addColorStop(0, "rgba(255,250,235," + (.75*ha) + ")");
-      g.addColorStop(.35, "rgba(217,186,127," + (.32*ha) + ")");
-      g.addColorStop(1, "rgba(217,186,127,0)");
+      g.addColorStop(0, "rgba(255,250,235," + (.8*ha) + ")");
+      g.addColorStop(.35, "rgba(240,200,120," + (.3*ha) + ")");
+      g.addColorStop(1, "rgba(240,200,120,0)");
       mtx.fillStyle = g;
       mtx.beginPath(); mtx.arc(head.x, head.y, R, 0, Math.PI*2); mtx.fill();
-      if (head.life <= 0 || head.x < -20 || head.y > CH + 20) head = null;
     }
-    tail = tail.filter(p => p.life > 0);
-    for (const p of tail) {
+    // 尾の下に散る微粒子
+    sparks = sparks.filter(p => p.life > 0);
+    for (const p of sparks) {
       p.x += p.vx; p.y += p.vy;
       p.vx *= .985; p.vy = p.vy * .985 + .004;
       p.life -= p.decay; p.tw += p.tws;
-      const a = Math.max(p.life, 0) * (.5 + .5*Math.sin(p.tw)) * .7;
-      mtx.fillStyle = p.gold ? "rgba(217,186,127," + a + ")" : "rgba(245,232,208," + a + ")";
+      const a = Math.max(p.life, 0) * (.5 + .5*Math.sin(p.tw)) * .65;
+      mtx.fillStyle = p.green ? "rgba(196,222,150," + a + ")" : "rgba(233,205,150," + a + ")";
       mtx.beginPath(); mtx.arc(p.x, p.y, p.size, 0, Math.PI*2); mtx.fill();
     }
     requestAnimationFrame(tick);
