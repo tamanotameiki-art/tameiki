@@ -22,9 +22,9 @@
 <style>
 :root {
   --void:#070508; --deep:#0f0a0d; --wine:#1e1018;
-  --ember:#b85028; --amber:#e08030; --gold:#f0b858;
+  --ember:#b85028; --amber:#c98a4b; --gold:#d9ba7f;
   --cream:#f5e8d0; --text:#e8d5b8; --text-s:#a08060;
-  --border:rgba(240,184,88,0.10);
+  --border:rgba(217,186,127,0.08);
 }
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -35,7 +35,7 @@ body {
 .bg { position:fixed; inset:0; z-index:0; pointer-events:none; }
 .bg-img {
   position:absolute; inset:0; opacity:.85;
-  background:url("bg.jpg") center bottom / cover no-repeat;
+  background:url("bg.jpg") center 32% / cover no-repeat;
   animation:bgDrift 70s ease-in-out infinite alternate;
 }
 @keyframes bgDrift {
@@ -65,7 +65,7 @@ body {
 .star {
   position:absolute; border-radius:50%;
   background:var(--gold);
-  box-shadow:0 0 6px 1px rgba(240,184,88,.5);
+  box-shadow:0 0 6px 1px rgba(217,186,127,0.4);
   animation:twinkle var(--d,3s) ease-in-out infinite var(--del,0s);
 }
 @keyframes twinkle {
@@ -88,7 +88,7 @@ main {
   font-size:clamp(1.8rem,6vw,2.6rem);
   color:var(--gold); letter-spacing:.12em;
   text-decoration:none; display:inline-block;
-  text-shadow:0 0 60px rgba(240,184,88,.3);
+  text-shadow:0 0 60px rgba(217,186,127,0.24);
 }
 .mission {
   margin-top:1.2rem;
@@ -97,8 +97,8 @@ main {
 }
 .now {
   margin:3.5rem auto 0;
-  border:1px solid rgba(240,184,88,.28);
-  background:rgba(240,184,88,.04);
+  border:1px solid rgba(217,186,127,0.224);
+  background:rgba(217,186,127,0.032);
   border-radius:3px;
   padding:1.4rem 1.6rem;
   text-align:left;
@@ -120,8 +120,8 @@ main {
   transition:all .3s;
 }
 .link-item:hover {
-  background:rgba(240,184,88,.05);
-  border-color:rgba(240,184,88,.3);
+  background:rgba(217,186,127,0.04);
+  border-color:rgba(217,186,127,0.24);
   color:var(--cream);
 }
 .link-item .name { font-size:.85rem; letter-spacing:.25em; }
@@ -264,7 +264,7 @@ footer a:hover { color:var(--cream); }
       d.tw += d.tws;
       const fade = d.y > CH*.72 ? Math.max(0, 1 - (d.y - CH*.72)/(CH*.2)) : 1;
       const a = (.25 + .5*d.z) * (.55 + .45*Math.sin(d.tw)) * fade * .8;
-      mtx.fillStyle = d.gold ? "rgba(240,184,88," + a + ")" : "rgba(245,232,208," + a + ")";
+      mtx.fillStyle = d.gold ? "rgba(217,186,127," + a + ")" : "rgba(245,232,208," + a + ")";
       mtx.beginPath(); mtx.arc(d.x, d.y, d.size, 0, Math.PI*2); mtx.fill();
       if (d.y > CH*.95 || fade <= 0) dust[i] = newDust(false);
     }
@@ -290,8 +290,8 @@ footer a:hover { color:var(--cream); }
       const R = 7 * head.z + 2;
       const g = mtx.createRadialGradient(head.x, head.y, 0, head.x, head.y, R);
       g.addColorStop(0, "rgba(255,250,235," + (.75*ha) + ")");
-      g.addColorStop(.35, "rgba(240,184,88," + (.32*ha) + ")");
-      g.addColorStop(1, "rgba(240,184,88,0)");
+      g.addColorStop(.35, "rgba(217,186,127," + (.32*ha) + ")");
+      g.addColorStop(1, "rgba(217,186,127,0)");
       mtx.fillStyle = g;
       mtx.beginPath(); mtx.arc(head.x, head.y, R, 0, Math.PI*2); mtx.fill();
       if (head.life <= 0 || head.x < -20 || head.y > CH + 20) head = null;
@@ -302,7 +302,7 @@ footer a:hover { color:var(--cream); }
       p.vx *= .985; p.vy = p.vy * .985 + .004;
       p.life -= p.decay; p.tw += p.tws;
       const a = Math.max(p.life, 0) * (.5 + .5*Math.sin(p.tw)) * .7;
-      mtx.fillStyle = p.gold ? "rgba(240,184,88," + a + ")" : "rgba(245,232,208," + a + ")";
+      mtx.fillStyle = p.gold ? "rgba(217,186,127," + a + ")" : "rgba(245,232,208," + a + ")";
       mtx.beginPath(); mtx.arc(p.x, p.y, p.size, 0, Math.PI*2); mtx.fill();
     }
     requestAnimationFrame(tick);

@@ -31,13 +31,13 @@
   --wine:    #1e1018;
   --plum:    #3a1a2a;
   --ember:   #b85028;
-  --amber:   #e08030;
-  --gold:    #f0b858;
+  --amber:   #c98a4b;
+  --gold:    #d9ba7f;
   --cream:   #f5e8d0;
   --mist:    #faf3e8;
   --text:    #e8d5b8;
   --text-s:  #a08060;
-  --border:  rgba(240,184,88,0.10);
+  --border:  rgba(217,186,127,0.08);
   --glass:   rgba(20,10,18,0.65);
 }
 
@@ -56,7 +56,7 @@ body {
 .bg { position:fixed; inset:0; z-index:0; pointer-events:none; }
 .bg-img {
   position:absolute; inset:0; opacity:.85;
-  background:url("bg.jpg") center bottom / cover no-repeat;
+  background:url("bg.jpg") center 32% / cover no-repeat;
   animation:bgDrift 70s ease-in-out infinite alternate;
 }
 @keyframes bgDrift {
@@ -86,7 +86,7 @@ body {
 .star {
   position:absolute; border-radius:50%;
   background:var(--gold);
-  box-shadow:0 0 6px 1px rgba(240,184,88,.5);
+  box-shadow:0 0 6px 1px rgba(217,186,127,0.4);
   animation:twinkle var(--d,3s) ease-in-out infinite var(--del,0s);
 }
 @keyframes twinkle {
@@ -175,7 +175,7 @@ nav.scrolled {
 }
 .hero-title span {
   display:inline-block;
-  text-shadow:0 0 60px rgba(240,184,88,.35),0 0 120px rgba(184,80,40,.2);
+  text-shadow:0 0 60px rgba(217,186,127,0.28),0 0 120px rgba(184,80,40,.2);
 }
 .hero-sub {
   font-size:clamp(.82rem,2vw,1rem);
@@ -269,7 +269,7 @@ section.block {
 }
 .archive-card:hover {
   transform:translateY(-4px) scale(1.015);
-  border-color:rgba(240,184,88,.28);
+  border-color:rgba(217,186,127,0.224);
   box-shadow:0 20px 60px rgba(0,0,0,.5), 0 0 40px rgba(184,80,40,.06);
 }
 .card-thumb {
@@ -310,7 +310,7 @@ section.block {
   transition:border-color .3s, color .3s;
   font-family:'Shippori Mincho',serif;
 }
-.btn-ghost:hover { border-color:rgba(240,184,88,.4); color:var(--gold); }
+.btn-ghost:hover { border-color:rgba(217,186,127,0.32); color:var(--gold); }
 .archive-empty {
   font-size:.78rem; color:var(--text-s);
   letter-spacing:.2em; line-height:2.4; margin-top:3rem;
@@ -359,8 +359,8 @@ section.block {
   transition:all .3s; border-radius:2px;
 }
 .sns-link:hover {
-  background:rgba(240,184,88,.05);
-  border-color:rgba(240,184,88,.3);
+  background:rgba(217,186,127,0.04);
+  border-color:rgba(217,186,127,0.24);
   color:var(--cream);
 }
 .sns-icon { font-size:1rem; }
@@ -682,7 +682,7 @@ document.addEventListener("DOMContentLoaded", () => {
       d.tw += d.tws;
       const fade = d.y > CH*.72 ? Math.max(0, 1 - (d.y - CH*.72)/(CH*.2)) : 1;
       const a = (.25 + .5*d.z) * (.55 + .45*Math.sin(d.tw)) * fade * .8;
-      mtx.fillStyle = d.gold ? "rgba(240,184,88," + a + ")" : "rgba(245,232,208," + a + ")";
+      mtx.fillStyle = d.gold ? "rgba(217,186,127," + a + ")" : "rgba(245,232,208," + a + ")";
       mtx.beginPath(); mtx.arc(d.x, d.y, d.size, 0, Math.PI*2); mtx.fill();
       if (d.y > CH*.95 || fade <= 0) dust[i] = newDust(false);
     }
@@ -708,8 +708,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const R = 7 * head.z + 2;
       const g = mtx.createRadialGradient(head.x, head.y, 0, head.x, head.y, R);
       g.addColorStop(0, "rgba(255,250,235," + (.75*ha) + ")");
-      g.addColorStop(.35, "rgba(240,184,88," + (.32*ha) + ")");
-      g.addColorStop(1, "rgba(240,184,88,0)");
+      g.addColorStop(.35, "rgba(217,186,127," + (.32*ha) + ")");
+      g.addColorStop(1, "rgba(217,186,127,0)");
       mtx.fillStyle = g;
       mtx.beginPath(); mtx.arc(head.x, head.y, R, 0, Math.PI*2); mtx.fill();
       if (head.life <= 0 || head.x < -20 || head.y > CH + 20) head = null;
@@ -720,7 +720,7 @@ document.addEventListener("DOMContentLoaded", () => {
       p.vx *= .985; p.vy = p.vy * .985 + .004;
       p.life -= p.decay; p.tw += p.tws;
       const a = Math.max(p.life, 0) * (.5 + .5*Math.sin(p.tw)) * .7;
-      mtx.fillStyle = p.gold ? "rgba(240,184,88," + a + ")" : "rgba(245,232,208," + a + ")";
+      mtx.fillStyle = p.gold ? "rgba(217,186,127," + a + ")" : "rgba(245,232,208," + a + ")";
       mtx.beginPath(); mtx.arc(p.x, p.y, p.size, 0, Math.PI*2); mtx.fill();
     }
     requestAnimationFrame(tick);
