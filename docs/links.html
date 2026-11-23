@@ -33,12 +33,33 @@ body {
   min-height:100vh; overflow-x:hidden;
 }
 .bg { position:fixed; inset:0; z-index:0; pointer-events:none; }
+.bg-img {
+  position:absolute; inset:0;
+  background:url("bg.jpg") center bottom / cover no-repeat;
+  animation:bgDrift 70s ease-in-out infinite alternate;
+}
+@keyframes bgDrift {
+  from { transform:scale(1.02) translateY(0); }
+  to   { transform:scale(1.10) translateY(-1.5%); }
+}
+.bg-fog {
+  position:absolute; left:-20%; right:-20%; bottom:-4%; height:34%;
+  background:radial-gradient(ellipse 60% 100% at 50% 100%, rgba(245,232,208,.14) 0%, rgba(224,128,48,.07) 45%, transparent 70%);
+  filter:blur(18px);
+  animation:fogDrift 26s ease-in-out infinite alternate;
+  pointer-events:none;
+}
+@keyframes fogDrift {
+  from { transform:translateX(-2.5%); opacity:.75; }
+  to   { transform:translateX(2.5%);  opacity:1; }
+}
+.bg-vignette {
+  position:absolute; inset:0;
+  background:radial-gradient(ellipse 120% 90% at 50% 45%, transparent 55%, rgba(3,2,4,.5) 100%);
+}
 .bg-grad {
   position:absolute; inset:0;
-  background:
-    radial-gradient(ellipse 80% 55% at 65% 105%, rgba(184,80,40,.38) 0%, transparent 60%),
-    radial-gradient(ellipse 55% 40% at 88% 98%,  rgba(224,128,48,.22) 0%, transparent 55%),
-    linear-gradient(180deg,#070508 0%,#0f0a0d 40%,#1e1018 100%);
+  background:linear-gradient(180deg, rgba(7,5,8,.52) 0%, rgba(7,5,8,.28) 34%, rgba(7,5,8,.18) 62%, rgba(7,5,8,.5) 100%);
 }
 .bg-grain {
   position:absolute; inset:0;
@@ -114,7 +135,7 @@ footer a:hover { color:var(--cream); }
 </head>
 <body>
 
-<div class="bg"><div class="bg-grad"></div><div class="bg-grain"></div></div>
+<div class="bg"><div class="bg-img"></div><div class="bg-grad"></div><div class="bg-fog"></div><div class="bg-vignette"></div><div class="bg-grain"></div></div>
 
 <main>
   <a class="logo" href="index.html">たまのためいき。</a>
