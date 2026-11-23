@@ -34,7 +34,7 @@ body {
 }
 .bg { position:fixed; inset:0; z-index:0; pointer-events:none; }
 .bg-img {
-  position:absolute; inset:0;
+  position:absolute; inset:0; opacity:.85;
   background:url("bg.jpg") center bottom / cover no-repeat;
   animation:bgDrift 70s ease-in-out infinite alternate;
 }
@@ -44,8 +44,8 @@ body {
 }
 .bg-fog {
   position:absolute; left:-20%; right:-20%; bottom:-4%; height:34%;
-  background:radial-gradient(ellipse 60% 100% at 50% 100%, rgba(245,232,208,.14) 0%, rgba(224,128,48,.07) 45%, transparent 70%);
-  filter:blur(18px);
+  background:radial-gradient(ellipse 60% 100% at 50% 100%, rgba(245,232,208,.24) 0%, rgba(224,128,48,.12) 45%, transparent 70%);
+  filter:blur(22px);
   animation:fogDrift 26s ease-in-out infinite alternate;
   pointer-events:none;
 }
@@ -60,6 +60,30 @@ body {
 .bg-grad {
   position:absolute; inset:0;
   background:linear-gradient(180deg, rgba(7,5,8,.52) 0%, rgba(7,5,8,.28) 34%, rgba(7,5,8,.18) 62%, rgba(7,5,8,.5) 100%);
+}
+.bg-stars { position:absolute; inset:0; overflow:hidden; }
+.star {
+  position:absolute; border-radius:50%;
+  background:var(--gold);
+  box-shadow:0 0 6px 1px rgba(240,184,88,.5);
+  animation:twinkle var(--d,3s) ease-in-out infinite var(--del,0s);
+}
+@keyframes twinkle {
+  0%,100%{ opacity:var(--op,.5); transform:scale(1); }
+  50%     { opacity:1;           transform:scale(1.35); }
+}
+.meteor {
+  position:absolute; width:110px; height:2px; border-radius:2px;
+  background:linear-gradient(90deg, rgba(245,232,208,0) 0%, rgba(245,232,208,.85) 78%, #fff 100%);
+  filter:drop-shadow(0 0 6px rgba(240,184,88,.8));
+  transform:rotate(-32deg);
+  animation:meteorFly 1s ease-out forwards;
+  pointer-events:none;
+}
+@keyframes meteorFly {
+  0%   { opacity:0; transform:rotate(-32deg) translateX(0); }
+  12%  { opacity:.85; }
+  100% { opacity:0; transform:rotate(-32deg) translateX(300px); }
 }
 .bg-grain {
   position:absolute; inset:0;
@@ -135,7 +159,7 @@ footer a:hover { color:var(--cream); }
 </head>
 <body>
 
-<div class="bg"><div class="bg-img"></div><div class="bg-grad"></div><div class="bg-fog"></div><div class="bg-vignette"></div><div class="bg-grain"></div></div>
+<div class="bg"><div class="bg-img"></div><div class="bg-grad"></div><div class="bg-fog"></div><div class="bg-vignette"></div><div class="bg-stars" id="stars"></div><div class="bg-grain"></div></div>
 
 <main>
   <a class="logo" href="index.html">たまのためいき。</a>
@@ -182,5 +206,33 @@ footer a:hover { color:var(--cream); }
   <p>© たまのためいき。</p>
 </footer>
 
+<script>
+// ===== 星を生成 =====
+(function() {
+  const container = document.getElementById("stars");
+  for (let i = 0; i < 90; i++) {
+    const star = document.createElement("div");
+    star.className = "star";
+    const size = Math.random() * 2.2 + .8;
+    star.style.cssText =
+      "width:" + size + "px; height:" + size + "px;" +
+      "left:" + (Math.random()*100) + "%; top:" + (Math.random()*70) + "%;" +
+      "--d:" + (2+Math.random()*4) + "s; --del:" + (Math.random()*5) + "s;" +
+      "--op:" + (.35+Math.random()*.6) + ";";
+    container.appendChild(star);
+  }
+  // ===== 流れ星（たまに、さり気なく） =====
+  function meteor() {
+    const m = document.createElement("div");
+    m.className = "meteor";
+    m.style.left = (15 + Math.random()*55) + "%";
+    m.style.top  = (4 + Math.random()*26) + "%";
+    container.appendChild(m);
+    setTimeout(() => m.remove(), 1100);
+    setTimeout(meteor, 9000 + Math.random()*9000);
+  }
+  setTimeout(meteor, 5000 + Math.random()*4000);
+})();
+</script>
 </body>
 </html>
