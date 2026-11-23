@@ -493,7 +493,7 @@ footer a:hover { color:var(--cream); }
 <section class="block" id="archive">
   <p class="section-label" data-reveal>— アーカイブ</p>
   <div class="archive-grid" id="archiveGrid"></div>
-  <p class="archive-empty" id="archiveEmpty" style="display:none;">いまは静かな時期です。詩は、ここに残っています。</p>
+  <p class="archive-empty" id="archiveEmpty" style="display:none;">いまは静かな時期。詩は、ここに残っている。</p>
   <div class="archive-more">
     <button class="btn-ghost" id="loadMoreBtn" onclick="loadMore()">もっと見る</button>
   </div>
@@ -504,8 +504,8 @@ footer a:hover { color:var(--cream); }
   <p class="section-label" data-reveal>— 長く聴く</p>
   <p class="section-note" data-reveal>
     眠る前や、作業のそばに置くための、長く聴ける選集。<br>
-    30分の演奏をつないで、1時間、3時間の流れにする。<br>
-    その棚は、再始動のあとにここへ置く。
+    30分の演奏をつないで、1時間、3時間の流れにしていく。<br>
+    長尺の選集は、再始動のあとにここへ置いていく。
   </p>
 </section>
 
@@ -530,7 +530,7 @@ footer a:hover { color:var(--cream); }
 <!-- ほかの場所 -->
 <section class="block" id="connect">
   <h2 class="connect-title">ほかの場所</h2>
-  <p class="connect-sub">映像は YouTube に、写真と詩は Instagram に、<br>夜の詩のボードは Pinterest に。</p>
+  <p class="connect-sub">映像は YouTube に、写真と詩は Instagram に、<br>夜の詩のボードは Pinterest に置いていく。</p>
   <div class="sns-links">
     <a class="sns-link" href="https://www.youtube.com/channel/UCE8QDag3lHM80xIyEGe9_5w" target="_blank" rel="noopener">
       <span class="sns-icon">▶</span> YouTube
@@ -550,7 +550,7 @@ footer a:hover { color:var(--cream); }
   <p class="section-label" data-reveal>— 問い合わせ</p>
   <p class="contact-note">
     仕事の連絡は、YouTube チャンネルの<br>
-    「メールアドレスを表示」から。
+    「メールアドレスを表示」から受けている。
   </p>
 </section>
 
@@ -559,6 +559,7 @@ footer a:hover { color:var(--cream); }
   <div class="footer-links">
     <a href="links.html">リンク</a>
     <a href="privacy.html">プライバシーポリシー</a>
+    <a href="admin_tK9mPq2vXr8n.html">管理</a>
   </div>
   <p>© たまのためいき。</p>
 </footer>
@@ -686,7 +687,7 @@ function parseCSV(text) {
 // ===== 最新の詩を表示 =====
 function renderLatest(posts) {
   if (!posts.length) {
-    document.getElementById("latestVideo").textContent = "いまは静かな時期です。";
+    document.getElementById("latestVideo").textContent = "いまは静かな時期。";
     return;
   }
   const latest = posts[0];
@@ -697,9 +698,8 @@ function renderLatest(posts) {
   }
   document.getElementById("latestPoemText").textContent = latest["詩"] || "";
   const date = (latest["投稿日時"] || "").slice(0,10);
-  const filter = latest["フィルター"] || "";
   document.getElementById("latestMeta").innerHTML =
-    date + (filter ? "<br>フィルター：" + filter : "") +
+    date +
     (ytId ? '<br><a href="https://youtube.com/shorts/' + ytId + '" target="_blank" rel="noopener">YouTubeで見る →</a>' : "");
 }
 
@@ -714,7 +714,6 @@ function renderArchive(posts, from, to) {
 
     const poem   = post["詩"] || "";
     const date   = (post["投稿日時"] || "").slice(0,10);
-    const filter = post["フィルター"] || "";
     const ytId   = post["YouTube投稿ID"] || "";
 
     card.innerHTML =
@@ -722,7 +721,6 @@ function renderArchive(posts, from, to) {
         (ytId
           ? '<img src="https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg" alt="" loading="lazy">'
           : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(160,128,96,.35);font-size:.65rem;letter-spacing:.2em;">no image</div>') +
-        (filter ? '<div class="card-filter-badge">' + filter + '</div>' : "") +
       '</div>' +
       '<div class="card-body">' +
         '<div class="card-poem"></div>' +
@@ -759,11 +757,9 @@ function openModal(post) {
   document.getElementById("modalPoem").textContent = post["詩"] || "";
 
   const date = (post["投稿日時"] || "").slice(0,10);
-  const filter = post["フィルター"] || "";
   const bgm = post["BGMタイトル"] || "";
   document.getElementById("modalInfo").innerHTML =
     date +
-    (filter ? "<br>フィルター：" + filter : "") +
     (bgm ? "<br>BGM：" + bgm : "") +
     (ytId ? '<br><br><a href="https://youtube.com/shorts/' + ytId + '" target="_blank" rel="noopener">YouTubeで見る →</a>' : "");
 
