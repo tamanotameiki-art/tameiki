@@ -208,12 +208,12 @@ footer a:hover { color:var(--cream); }
       "--op:" + (.35+Math.random()*.6) + ";";
     container.appendChild(star);
   }
-  // ===== 流れ星（粒子で描く・左下へ・たまに） =====
+  // ===== 星屑と流れ星（粒子・奥行きと加速度つき） =====
   const mc = document.createElement("canvas");
   mc.style.cssText = "position:absolute;inset:0;width:100%;height:100%;pointer-events:none;";
   container.appendChild(mc);
   const mtx = mc.getContext("2d");
-  let CW = 0, CH = 0, parts = [], head = null, rafId = null;
+  let CW = 0, CH = 0;
   function sizeCanvas() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     CW = container.clientWidth; CH = container.clientHeight;
@@ -222,59 +222,92 @@ footer a:hover { color:var(--cream); }
   }
   sizeCanvas();
   window.addEventListener("resize", sizeCanvas);
+
+  // 星屑：奥行き z で速度・大きさ・明るさが変わる
+  const DUST_N = 16;
+  const dust = [];
+  function newDust(init) {
+    const z = .3 + Math.random()*.7;
+    return {
+      x: Math.random()*CW, y: init ? Math.random()*CH*.8 : -4,
+      z, vy: .22 + z*.5, sway: Math.random()*Math.PI*2, swf: .008 + Math.random()*.012,
+      size: .5 + z*1.05, tw: Math.random()*Math.PI*2, tws: .06 + Math.random()*.1,
+      gold: Math.random() < .55
+    };
+  }
+  for (let i = 0; i < DUST_N; i++) dust.push(newDust(true));
+
+  // 流れ星：重力で加速しながら弧を描く頭＋細かい尾の粒
+  let head = null, tail = [];
+  function spawnMeteor() {
+    if (!head && CW > 0) {
+      const z = .7 + Math.random()*.3;
+      const th = (22 + Math.random()*8) * Math.PI/180;
+      const spd = 2.6 + Math.random()*1.1;
+      head = {
+        x: CW * (.55 + Math.random()*.35), y: CH * (.02 + Math.random()*.13),
+        vx: -Math.cos(th)*spd*z*1.6, vy: Math.sin(th)*spd*z*1.6,
+        z, life: 1
+      };
+    }
+    setTimeout(spawnMeteor, 11000 + Math.random()*9000);
+  }
+  setTimeout(spawnMeteor, 6000 + Math.random()*4000);
+
   function tick() {
     mtx.clearRect(0, 0, CW, CH);
+    for (let i = 0; i < dust.length; i++) {
+      const d = dust[i];
+      d.vy *= 1.0016;
+      d.y += d.vy; d.sway += d.swf;
+      d.x += Math.sin(d.sway) * .35 * d.z;
+      d.tw += d.tws;
+      const fade = d.y > CH*.72 ? Math.max(0, 1 - (d.y - CH*.72)/(CH*.2)) : 1;
+      const a = (.25 + .5*d.z) * (.55 + .45*Math.sin(d.tw)) * fade * .8;
+      mtx.fillStyle = d.gold ? "rgba(240,184,88," + a + ")" : "rgba(245,232,208," + a + ")";
+      mtx.beginPath(); mtx.arc(d.x, d.y, d.size, 0, Math.PI*2); mtx.fill();
+      if (d.y > CH*.95 || fade <= 0) dust[i] = newDust(false);
+    }
     if (head) {
+      head.vy += .05 * head.z;
+      head.vx *= .999;
       head.x += head.vx; head.y += head.vy;
-      head.vx *= .996; head.vy *= .996;
-      head.life -= .011;
-      const n = 4;
-      for (let i = 0; i < n; i++) {
-        parts.push({
-          x: head.x + (Math.random()-.5)*3, y: head.y + (Math.random()-.5)*3,
-          vx: -head.vx*.06 + (Math.random()-.5)*.5,
-          vy: -head.vy*.06 + (Math.random()-.5)*.5 - .08,
-          life: 1, decay: .012 + Math.random()*.02,
-          size: .6 + Math.random()*1.7,
-          tw: Math.random()*Math.PI*2, tws: .25 + Math.random()*.4,
+      head.life -= .0085;
+      for (let i = 0; i < 3; i++) {
+        const pz = Math.max(.25, head.z + (Math.random()-.5)*.3);
+        tail.push({
+          x: head.x + (Math.random()-.5)*2.5, y: head.y + (Math.random()-.5)*2.5,
+          vx: -head.vx*.05 + (Math.random()-.5)*.35,
+          vy: -head.vy*.05 + (Math.random()-.5)*.35,
+          z: pz, life: 1, decay: .011 + Math.random()*.014,
+          size: .4 + pz*.9,
+          tw: Math.random()*Math.PI*2, tws: .3 + Math.random()*.45,
           gold: Math.random() < .6
         });
       }
-      const ha = head.life < .15 ? head.life/.15 : (head.life > .9 ? (1-head.life)/.1 : 1);
-      const g = mtx.createRadialGradient(head.x, head.y, 0, head.x, head.y, 9);
-      g.addColorStop(0, "rgba(255,250,235," + (.9*ha) + ")");
-      g.addColorStop(.35, "rgba(240,184,88," + (.45*ha) + ")");
+      if (tail.length > 240) tail.splice(0, tail.length - 240);
+      const ha = head.life < .2 ? head.life/.2 : (head.life > .92 ? (1-head.life)/.08 : 1);
+      const R = 7 * head.z + 2;
+      const g = mtx.createRadialGradient(head.x, head.y, 0, head.x, head.y, R);
+      g.addColorStop(0, "rgba(255,250,235," + (.75*ha) + ")");
+      g.addColorStop(.35, "rgba(240,184,88," + (.32*ha) + ")");
       g.addColorStop(1, "rgba(240,184,88,0)");
       mtx.fillStyle = g;
-      mtx.beginPath(); mtx.arc(head.x, head.y, 9, 0, Math.PI*2); mtx.fill();
-      if (head.life <= 0) head = null;
+      mtx.beginPath(); mtx.arc(head.x, head.y, R, 0, Math.PI*2); mtx.fill();
+      if (head.life <= 0 || head.x < -20 || head.y > CH + 20) head = null;
     }
-    parts = parts.filter(p => p.life > 0);
-    for (const p of parts) {
-      p.x += p.vx; p.y += p.vy; p.life -= p.decay; p.tw += p.tws;
-      const sparkle = .55 + .45 * Math.sin(p.tw);
-      const a = Math.max(p.life, 0) * sparkle * .85;
-      mtx.fillStyle = p.gold
-        ? "rgba(240,184,88," + a + ")"
-        : "rgba(245,232,208," + a + ")";
+    tail = tail.filter(p => p.life > 0);
+    for (const p of tail) {
+      p.x += p.vx; p.y += p.vy;
+      p.vx *= .985; p.vy = p.vy * .985 + .004;
+      p.life -= p.decay; p.tw += p.tws;
+      const a = Math.max(p.life, 0) * (.5 + .5*Math.sin(p.tw)) * .7;
+      mtx.fillStyle = p.gold ? "rgba(240,184,88," + a + ")" : "rgba(245,232,208," + a + ")";
       mtx.beginPath(); mtx.arc(p.x, p.y, p.size, 0, Math.PI*2); mtx.fill();
     }
-    if (head || parts.length) { rafId = requestAnimationFrame(tick); }
-    else { rafId = null; mtx.clearRect(0, 0, CW, CH); }
+    requestAnimationFrame(tick);
   }
-  function spawnMeteor() {
-    if (!head) {
-      const th = (28 + Math.random()*10) * Math.PI/180;
-      const spd = 5.4 + Math.random()*1.8;
-      head = {
-        x: CW * (.5 + Math.random()*.38), y: CH * (.03 + Math.random()*.15),
-        vx: -Math.cos(th)*spd, vy: Math.sin(th)*spd, life: 1
-      };
-      if (!rafId) tick();
-    }
-    setTimeout(spawnMeteor, 9000 + Math.random()*9000);
-  }
-  setTimeout(spawnMeteor, 5000 + Math.random()*4000);
+  tick();
 })();
 </script>
 </body>
