@@ -3,16 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>たまのためいき。</title>
-<meta name="description" content="詩と映像。静かな夜に、ためいきのように。">
+<title>たまのためいき。｜詩と映像。静かな夜に、ためいきのように。</title>
+<meta name="description" content="詩と映像。静かな夜に、ためいきのように。自作の詩と音楽でつくる、短い映像のアーカイブ。">
+<link rel="canonical" href="https://tamanotameiki-art.github.io/tameiki/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="たまのためいき。">
 <meta property="og:title" content="たまのためいき。">
 <meta property="og:description" content="詩と映像。静かな夜に、ためいきのように。">
-<meta property="og:image" content="https://tamaiki.com/og.jpg">
-<meta property="og:url" content="https://tamaiki.com">
+<meta property="og:image" content="https://tamanotameiki-art.github.io/tameiki/og.jpg">
+<meta property="og:url" content="https://tamanotameiki-art.github.io/tameiki/">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"たまのためいき。","url":"https://tamanotameiki-art.github.io/tameiki/","description":"詩と映像。静かな夜に、ためいきのように。自作の詩と音楽でつくる、短い映像のアーカイブ。","inLanguage":"ja"}
+</script>
 
 <!-- フォント -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;700&family=Zen+Old+Mincho:wght@400;700&family=EB+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
 
 <style>
@@ -28,7 +36,7 @@
   --cream:   #f5e8d0;
   --mist:    #faf3e8;
   --text:    #e8d5b8;
-  --text-s:  #907050;
+  --text-s:  #a08060;
   --border:  rgba(240,184,88,0.10);
   --glass:   rgba(20,10,18,0.65);
 }
@@ -45,9 +53,7 @@ body {
 }
 
 /* ===== 固定背景 ===== */
-.bg {
-  position:fixed; inset:0; z-index:0; pointer-events:none;
-}
+.bg { position:fixed; inset:0; z-index:0; pointer-events:none; }
 .bg-grad {
   position:absolute; inset:0;
   background:
@@ -161,9 +167,7 @@ nav.scrolled {
   display:flex; flex-direction:column; align-items:center; gap:.8rem;
   opacity:0; animation:fadeIn 1s ease 2s forwards;
 }
-.hero-scroll span {
-  font-size:.62rem; letter-spacing:.35em; color:var(--text-s);
-}
+.hero-scroll span { font-size:.62rem; letter-spacing:.35em; color:var(--text-s); }
 .scroll-line {
   width:1px; height:50px;
   background:linear-gradient(to bottom,var(--amber),transparent);
@@ -176,8 +180,8 @@ nav.scrolled {
   100%{ transform:scaleY(0); transform-origin:bottom; opacity:.3; }
 }
 
-/* ===== 先週のベスト ===== */
-#best {
+/* ===== セクション共通 ===== */
+section.block {
   position:relative; z-index:1;
   padding:7rem 2rem;
   max-width:900px; margin:0 auto;
@@ -185,56 +189,48 @@ nav.scrolled {
 .section-label {
   font-size:.65rem; letter-spacing:.45em; color:var(--amber);
   margin-bottom:3rem; text-transform:uppercase;
-  opacity:0; transition:opacity .7s, transform .7s;
-  transform:translateY(20px);
 }
-.section-label.visible { opacity:1; transform:translateY(0); }
+.section-note {
+  font-size:.8rem; color:var(--text-s);
+  letter-spacing:.15em; line-height:2.4;
+  max-width:560px;
+}
 
-.best-card {
+/* ===== 最新の詩 ===== */
+.latest-card {
   display:grid; grid-template-columns:1fr 1fr; gap:3.5rem;
   align-items:center;
 }
 @media(max-width:640px){
-  .best-card { grid-template-columns:1fr; gap:2rem; }
+  .latest-card { grid-template-columns:1fr; gap:2rem; }
 }
-.best-video-wrap {
+.latest-video-wrap {
   aspect-ratio:9/16; max-height:500px;
   border-radius:4px;
   overflow:hidden;
   border:1px solid var(--border);
   background:var(--deep);
-  opacity:0; transition:opacity .9s, transform .9s;
-  transform:translateX(-30px);
   box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 60px rgba(184,80,40,.08);
 }
-.best-video-wrap.visible { opacity:1; transform:translateX(0); }
-.best-video-wrap video, .best-video-wrap iframe {
-  width:100%; height:100%; object-fit:cover;
-}
-.best-poem {
-  opacity:0; transition:opacity .9s .2s, transform .9s .2s;
-  transform:translateX(30px);
-}
-.best-poem.visible { opacity:1; transform:translateX(0); }
-.best-poem-text {
+.latest-video-wrap iframe { width:100%; height:100%; border:0; }
+.latest-poem-text {
   writing-mode:vertical-rl;
   font-size:clamp(1rem,2.5vw,1.35rem);
   line-height:2.6; letter-spacing:.3em;
   color:var(--cream);
   margin-bottom:2.5rem;
   white-space:pre-wrap;
+  max-height:420px;
 }
-.best-meta {
+.latest-meta {
   font-size:.68rem; letter-spacing:.25em; color:var(--text-s);
   line-height:2.2;
 }
+.latest-meta a { color:var(--amber); text-decoration:none; }
+.latest-meta a:hover { color:var(--gold); }
 
 /* ===== アーカイブ ===== */
-#archive {
-  position:relative; z-index:1;
-  padding:5rem 2rem 8rem;
-  max-width:1100px; margin:0 auto;
-}
+#archive { max-width:1100px; }
 .archive-grid {
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
@@ -249,10 +245,6 @@ nav.scrolled {
   backdrop-filter:blur(8px);
   cursor:pointer;
   transition:transform .35s ease, border-color .35s, box-shadow .35s;
-  opacity:0; transform:translateY(24px);
-}
-.archive-card.visible {
-  opacity:1; transform:translateY(0);
 }
 .archive-card:hover {
   transform:translateY(-4px) scale(1.015);
@@ -260,7 +252,7 @@ nav.scrolled {
   box-shadow:0 20px 60px rgba(0,0,0,.5), 0 0 40px rgba(184,80,40,.06);
 }
 .card-thumb {
-  aspect-ratio:9/16; width:100%; max-height:220px;
+  aspect-ratio:4/3; width:100%;
   background:var(--deep);
   overflow:hidden; position:relative;
 }
@@ -280,23 +272,13 @@ nav.scrolled {
   display:-webkit-box; -webkit-line-clamp:3;
   -webkit-box-orient:vertical; overflow:hidden;
   margin-bottom:1rem;
+  white-space:pre-wrap;
 }
 .card-date {
   font-size:.6rem; letter-spacing:.3em; color:var(--text-s);
   font-family:'EB Garamond',serif;
 }
-.card-stats {
-  display:flex; gap:1rem; margin-top:.7rem;
-}
-.card-stat {
-  font-size:.6rem; color:var(--text-s); letter-spacing:.1em;
-}
-.card-stat span { color:var(--amber); margin-right:.2rem; }
-
-/* アーカイブもっと見る */
-.archive-more {
-  text-align:center; margin-top:3.5rem;
-}
+.archive-more { text-align:center; margin-top:3.5rem; }
 .btn-ghost {
   display:inline-block;
   padding:.9rem 2.8rem;
@@ -307,18 +289,33 @@ nav.scrolled {
   transition:border-color .3s, color .3s;
   font-family:'Shippori Mincho',serif;
 }
-.btn-ghost:hover {
-  border-color:rgba(240,184,88,.4);
-  color:var(--gold);
+.btn-ghost:hover { border-color:rgba(240,184,88,.4); color:var(--gold); }
+.archive-empty {
+  font-size:.78rem; color:var(--text-s);
+  letter-spacing:.2em; line-height:2.4; margin-top:3rem;
 }
 
-/* ===== SNSリンク ===== */
-#connect {
-  position:relative; z-index:1;
-  padding:6rem 2rem;
-  text-align:center;
-  border-top:1px solid var(--border);
+/* ===== この場所について ===== */
+.about-numbers {
+  display:flex; flex-wrap:wrap; gap:3rem;
+  margin:3rem 0;
 }
+.about-num { text-align:left; }
+.about-num .n {
+  font-family:'EB Garamond',serif;
+  font-size:2.2rem; color:var(--gold); line-height:1;
+}
+.about-num .l {
+  font-size:.65rem; letter-spacing:.3em; color:var(--text-s);
+  margin-top:.6rem;
+}
+.about-mission {
+  font-size:clamp(.95rem,2.4vw,1.15rem);
+  color:var(--cream); letter-spacing:.2em; line-height:2.6;
+}
+
+/* ===== ほかの場所 ===== */
+#connect { text-align:center; max-width:900px; }
 .connect-title {
   font-family:'Zen Old Mincho',serif;
   font-size:clamp(1.2rem,3vw,1.8rem);
@@ -327,7 +324,7 @@ nav.scrolled {
 }
 .connect-sub {
   font-size:.72rem; letter-spacing:.25em; color:var(--text-s);
-  margin-bottom:3.5rem;
+  margin-bottom:3.5rem; line-height:2.2;
 }
 .sns-links {
   display:flex; flex-wrap:wrap; justify-content:center; gap:1.5rem;
@@ -346,26 +343,19 @@ nav.scrolled {
   color:var(--cream);
 }
 .sns-icon { font-size:1rem; }
+.connect-links-page { margin-top:2.5rem; }
+.connect-links-page a {
+  color:var(--amber); font-size:.72rem;
+  letter-spacing:.25em; text-decoration:none;
+}
+.connect-links-page a:hover { color:var(--gold); }
 
 /* ===== 問い合わせ ===== */
-#contact {
-  position:relative; z-index:1;
-  padding:5rem 2rem 8rem;
-  max-width:520px; margin:0 auto;
-  text-align:center;
-  border-top:1px solid var(--border);
-}
+#contact { max-width:520px; text-align:center; }
 .contact-note {
   font-size:.72rem; color:var(--text-s);
   letter-spacing:.2em; line-height:2.4;
-  margin-bottom:2rem;
 }
-.contact-email {
-  font-family:'EB Garamond',serif;
-  font-size:1rem; letter-spacing:.15em;
-  color:var(--amber); text-decoration:none;
-}
-.contact-email:hover { color:var(--gold); }
 
 /* ===== フッター ===== */
 footer {
@@ -378,6 +368,12 @@ footer p {
   font-family:'EB Garamond',serif;
   font-size:.65rem; letter-spacing:.3em; color:var(--text-s);
 }
+footer a {
+  color:var(--text-s); text-decoration:none;
+  font-family:'Shippori Mincho',serif; letter-spacing:.2em;
+}
+footer a:hover { color:var(--cream); }
+.footer-links { margin-bottom:1rem; display:flex; gap:2rem; justify-content:center; }
 
 /* ===== アーカイブ詳細モーダル ===== */
 #modal {
@@ -391,6 +387,7 @@ footer p {
 }
 #modal.open { opacity:1; visibility:visible; }
 .modal-inner {
+  position:relative;
   display:grid; grid-template-columns:auto 1fr; gap:3rem;
   max-width:820px; width:100%;
   background:rgba(15,10,13,.9);
@@ -409,16 +406,19 @@ footer p {
   border-radius:3px; overflow:hidden;
   border:1px solid var(--border);
   flex-shrink:0;
+  background:var(--deep);
 }
 @media(max-width:600px){ .modal-video { width:100%; max-width:200px; margin:0 auto; } }
-.modal-video video { width:100%; height:100%; object-fit:cover; }
+.modal-video iframe { width:100%; height:100%; border:0; }
 .modal-poem-text {
   writing-mode:vertical-rl;
   font-size:1.1rem; line-height:2.8;
   letter-spacing:.3em; color:var(--cream);
   white-space:pre-wrap; margin-bottom:2rem;
+  max-height:60vh;
 }
 .modal-info { font-size:.68rem; color:var(--text-s); letter-spacing:.2em; line-height:2.4; }
+.modal-info a { color:var(--amber); text-decoration:none; font-size:.65rem; letter-spacing:.2em; }
 .modal-close {
   position:absolute; top:1.2rem; right:1.5rem;
   background:none; border:none; color:var(--text-s);
@@ -427,7 +427,6 @@ footer p {
   transition:color .2s;
 }
 .modal-close:hover { color:var(--cream); }
-#modal { position:fixed; }
 
 @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
 @keyframes riseIn  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
@@ -439,17 +438,17 @@ footer p {
 }
 .reveal.visible { opacity:1; transform:translateY(0); }
 
-/* ===== レスポンシブ ===== */
 @media(max-width:480px){
   nav { padding:1rem 1.2rem; }
   .nav-links { gap:1.4rem; }
+  section.block { padding:5rem 1.4rem; }
 }
 </style>
 </head>
 <body>
 
 <!-- ローディング -->
-<div id="loading" style="display:none;"><div class="loading-logo">たまのためいき。</div></div>
+<div id="loading"><div class="loading-logo">たまのためいき。</div></div>
 
 <!-- 固定背景 -->
 <div class="bg">
@@ -462,89 +461,113 @@ footer p {
 <nav id="nav">
   <a href="#" class="nav-logo">たまのためいき。</a>
   <ul class="nav-links">
+    <li><a href="#latest">最新の詩</a></li>
     <li><a href="#archive">アーカイブ</a></li>
-    <li><a href="#connect">SNS</a></li>
-    <li><a href="#contact">問い合わせ</a></li>
+    <li><a href="links.html">リンク</a></li>
   </ul>
 </nav>
 
 <!-- ヒーロー -->
 <section id="hero">
-  <p class="hero-eyebrow">Poems & Films</p>
+  <p class="hero-eyebrow">Poems &amp; Films</p>
   <h1 class="hero-title"><span>たまのためいき。</span></h1>
   <p class="hero-sub">詩と映像。<br>静かな夜に、ためいきのように。</p>
   <div class="hero-scroll"><span>scroll</span><div class="scroll-line"></div></div>
 </section>
 
-<!-- 先週のベスト -->
-<section id="best">
-  <p class="section-label" data-reveal>— 先週のベスト作品</p>
-  <div class="best-card">
-    <div class="best-video-wrap" id="bestVideoWrap" data-reveal>
-      <div id="bestVideoInner" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(144,112,80,.4);font-size:.72rem;letter-spacing:.2em;">
-        読み込み中…
-      </div>
+<!-- 最新の詩 -->
+<section class="block" id="latest">
+  <p class="section-label" data-reveal>— 最新の詩</p>
+  <div class="latest-card">
+    <div class="latest-video-wrap" data-reveal>
+      <div id="latestVideo" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(160,128,96,.5);font-size:.72rem;letter-spacing:.2em;">読み込み中…</div>
     </div>
-    <div class="best-poem" id="bestPoem" data-reveal>
-      <div class="best-poem-text" id="bestPoemText">　</div>
-      <div class="best-meta" id="bestMeta"></div>
+    <div data-reveal>
+      <div class="latest-poem-text" id="latestPoemText">　</div>
+      <div class="latest-meta" id="latestMeta"></div>
     </div>
   </div>
 </section>
 
 <!-- アーカイブ -->
-<section id="archive">
+<section class="block" id="archive">
   <p class="section-label" data-reveal>— アーカイブ</p>
   <div class="archive-grid" id="archiveGrid"></div>
+  <p class="archive-empty" id="archiveEmpty" style="display:none;">いまは静かな時期です。詩は、ここに残っています。</p>
   <div class="archive-more">
     <button class="btn-ghost" id="loadMoreBtn" onclick="loadMore()">もっと見る</button>
   </div>
 </section>
 
-<!-- SNSリンク -->
-<section id="connect">
-  <h2 class="connect-title">フォローする</h2>
-  <p class="connect-sub">毎日21:00 更新</p>
+<!-- 長く聴く -->
+<section class="block" id="longform">
+  <p class="section-label" data-reveal>— 長く聴く</p>
+  <p class="section-note" data-reveal>
+    眠る前や、作業のそばに置くための、長く聴ける選集。<br>
+    30分の演奏をつないで、1時間、3時間の流れにする。<br>
+    その棚は、再始動のあとにここへ置く。
+  </p>
+</section>
+
+<!-- この場所について -->
+<section class="block" id="about">
+  <p class="section-label" data-reveal>— この場所について</p>
+  <p class="about-mission" data-reveal>
+    この場所の目的はひとつだけ。<br>
+    静かな夜に、ためいきひとつ分の居場所になること。
+  </p>
+  <div class="about-numbers" data-reveal>
+    <div class="about-num"><div class="n">47</div><div class="l">書きためた詩</div></div>
+    <div class="about-num"><div class="n">19</div><div class="l">映像になった詩</div></div>
+    <div class="about-num"><div class="n">1</div><div class="l">作る人間（詩も音楽も演奏も）</div></div>
+  </div>
+  <p class="section-note" data-reveal>
+    ここにある詩は、全部わたしの言葉。<br>
+    詩も、音楽も、演奏も、全部ひとりで作っている。
+  </p>
+</section>
+
+<!-- ほかの場所 -->
+<section class="block" id="connect">
+  <h2 class="connect-title">ほかの場所</h2>
+  <p class="connect-sub">映像は YouTube に、写真と詩は Instagram に、<br>夜の詩のボードは Pinterest に。</p>
   <div class="sns-links">
-    <a class="sns-link" href="https://x.com/tamanotameiki" target="_blank">
-      <span class="sns-icon">𝕏</span> X（Twitter）
-    </a>
-    <a class="sns-link" href="https://www.youtube.com/channel/UCE8QDag3lHM80xIyEGe9_5w" target="_blank">
+    <a class="sns-link" href="https://www.youtube.com/channel/UCE8QDag3lHM80xIyEGe9_5w" target="_blank" rel="noopener">
       <span class="sns-icon">▶</span> YouTube
     </a>
-    <a class="sns-link" href="https://www.instagram.com/tamanotameiki/" target="_blank">
+    <a class="sns-link" href="https://www.instagram.com/tamanotameiki/" target="_blank" rel="noopener">
       <span class="sns-icon">◎</span> Instagram
     </a>
-    <a class="sns-link" href="https://www.tiktok.com/@tamanotameiki" target="_blank">
-      <span class="sns-icon">♪</span> TikTok
-    </a>
-    <a class="sns-link" href="https://jp.pinterest.com/tamanotameiki/_created/" target="_blank">
+    <a class="sns-link" href="https://jp.pinterest.com/tamanotameiki/" target="_blank" rel="noopener">
       <span class="sns-icon">𝙿</span> Pinterest
     </a>
   </div>
+  <p class="connect-links-page"><a href="links.html">すべてのリンクはこちら →</a></p>
 </section>
 
 <!-- 問い合わせ -->
-<section id="contact">
+<section class="block" id="contact">
+  <p class="section-label" data-reveal>— 問い合わせ</p>
   <p class="contact-note">
-    BGMのご提供・コラボレーション<br>
-    その他のお問い合わせ
+    仕事の連絡は、YouTube チャンネルの<br>
+    「メールアドレスを表示」から。
   </p>
-  <a class="contact-email" href="mailto:tamanotameiki@gmail.com">tamanotameiki@gmail.com</a>
 </section>
 
 <!-- フッター -->
 <footer>
+  <div class="footer-links">
+    <a href="links.html">リンク</a>
+    <a href="privacy.html">プライバシーポリシー</a>
+  </div>
   <p>© たまのためいき。</p>
 </footer>
 
 <!-- アーカイブ詳細モーダル -->
 <div id="modal">
-  <div class="modal-inner" style="position:relative;">
+  <div class="modal-inner">
     <button class="modal-close" onclick="closeModal()">×</button>
-    <div class="modal-video">
-      <video id="modalVideo" controls playsinline muted loop></video>
-    </div>
+    <div class="modal-video" id="modalVideo"></div>
     <div>
       <div class="modal-poem-text" id="modalPoem"></div>
       <div class="modal-info" id="modalInfo"></div>
@@ -555,7 +578,7 @@ footer p {
 <script>
 // ===== 設定 =====
 const SHEET_HISTORY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTdGWWyI8Vnq6rxlitXnemaCLCqRUOcO_ZcPhAfDOzC-SH9zIIr7nRMRAq0De6jL0Z3_BZQ5ljtd2Py/pub?gid=763442013&single=true&output=csv";
-const CACHE_KEY  = "tameiki_archive_v2";
+const CACHE_KEY  = "tameiki_archive_v3";
 const CACHE_TTL  = 3600 * 1000;
 
 // ===== ローディング終了 =====
@@ -572,12 +595,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const star = document.createElement("div");
     star.className = "star";
     const size = Math.random() * 2 + .5;
-    star.style.cssText = `
-      width:${size}px; height:${size}px;
-      left:${Math.random()*100}%; top:${Math.random()*100}%;
-      --d:${2+Math.random()*4}s; --del:${Math.random()*5}s;
-      --op:${.15+Math.random()*.5};
-    `;
+    star.style.cssText =
+      "width:" + size + "px; height:" + size + "px;" +
+      "left:" + (Math.random()*100) + "%; top:" + (Math.random()*100) + "%;" +
+      "--d:" + (2+Math.random()*4) + "s; --del:" + (Math.random()*5) + "s;" +
+      "--op:" + (.15+Math.random()*.5) + ";";
     container.appendChild(star);
   }
 })();
@@ -611,10 +633,10 @@ async function fetchHistory() {
   try {
     const cached = sessionStorage.getItem(CACHE_KEY);
     if (cached) {
-      const { data, ts } = JSON.parse(cached);
-      if (Date.now() - ts < CACHE_TTL) return data;
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.ts < CACHE_TTL) return parsed.data;
     }
-  } catch {}
+  } catch (e) {}
 
   try {
     const res  = await fetch(SHEET_HISTORY_CSV);
@@ -627,7 +649,9 @@ async function fetchHistory() {
       return obj;
     }).filter(p => p["詩"]).reverse();
 
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data: posts, ts: Date.now() }));
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data: posts, ts: Date.now() }));
+    } catch (e) {}
     return posts;
   } catch (e) {
     console.warn("データ取得失敗:", e);
@@ -659,35 +683,24 @@ function parseCSV(text) {
   return rows;
 }
 
-// ===== ベスト作品を表示 =====
-function renderBest(posts) {
-  if (!posts.length) return;
-
-  const best = posts.slice(0, 30).reduce((best, post) => {
-    const plays = (parseInt(post["X再生数"]||0) + parseInt(post["YouTube再生数"]||0) + parseInt(post["Instagram再生数"]||0));
-    const bestPlays = (parseInt(best["X再生数"]||0) + parseInt(best["YouTube再生数"]||0) + parseInt(best["Instagram再生数"]||0));
-    return plays > bestPlays ? post : best;
-  }, posts[0]);
-
-  const ytId = best["YouTube投稿ID"];
-  const videoWrap = document.getElementById("bestVideoWrap");
-  if (ytId) {
-    videoWrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=0&mute=1&playsinline=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;height:100%;"></iframe>`;
+// ===== 最新の詩を表示 =====
+function renderLatest(posts) {
+  if (!posts.length) {
+    document.getElementById("latestVideo").textContent = "いまは静かな時期です。";
+    return;
   }
-
-  document.getElementById("bestPoemText").textContent = best["詩"] || "";
-
-  const totalPlays = (parseInt(best["X再生数"]||0) + parseInt(best["YouTube再生数"]||0) + parseInt(best["Instagram再生数"]||0)).toLocaleString();
-  document.getElementById("bestMeta").innerHTML = `
-    ${best["投稿日時"]?.slice(0,10) || ""}<br>
-    フィルター：${best["フィルター"] || ""}<br>
-    総再生数：${totalPlays}
-  `;
-
-  setTimeout(() => {
-    document.getElementById("bestPoem").classList.add("visible");
-    document.getElementById("bestVideoWrap").classList.add("visible");
-  }, 100);
+  const latest = posts[0];
+  const ytId = latest["YouTube投稿ID"];
+  if (ytId) {
+    document.getElementById("latestVideo").parentElement.innerHTML =
+      '<iframe src="https://www.youtube.com/embed/' + ytId + '?playsinline=1" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen title="最新の詩"></iframe>';
+  }
+  document.getElementById("latestPoemText").textContent = latest["詩"] || "";
+  const date = (latest["投稿日時"] || "").slice(0,10);
+  const filter = latest["フィルター"] || "";
+  document.getElementById("latestMeta").innerHTML =
+    date + (filter ? "<br>フィルター：" + filter : "") +
+    (ytId ? '<br><a href="https://youtube.com/shorts/' + ytId + '" target="_blank" rel="noopener">YouTubeで見る →</a>' : "");
 }
 
 // ===== アーカイブを表示 =====
@@ -695,44 +708,37 @@ function renderArchive(posts, from, to) {
   const grid = document.getElementById("archiveGrid");
   const slice = posts.slice(from, to);
 
-  slice.forEach((post, i) => {
+  slice.forEach((post) => {
     const card = document.createElement("div");
-    card.className = "archive-card";
-    card.style.transitionDelay = `${(i % 3) * 0.08}s`;
+    card.className = "archive-card reveal";
 
-    const poem    = post["詩"] || "";
-    const date    = post["投稿日時"]?.slice(0,10) || "";
-    const filter  = post["フィルター"] || "";
-    const ytId    = post["YouTube投稿ID"] || "";
-    const plays   = (parseInt(post["X再生数"]||0) + parseInt(post["YouTube再生数"]||0)).toLocaleString();
+    const poem   = post["詩"] || "";
+    const date   = (post["投稿日時"] || "").slice(0,10);
+    const filter = post["フィルター"] || "";
+    const ytId   = post["YouTube投稿ID"] || "";
 
-    card.innerHTML = `
-      <div class="card-thumb">
-        ${ytId
-          ? `<img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" alt="" loading="lazy">`
-          : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(144,112,80,.3);font-size:.65rem;letter-spacing:.2em;">no image</div>`
-        }
-        ${filter ? `<div class="card-filter-badge">${filter}</div>` : ""}
-      </div>
-      <div class="card-body">
-        <div class="card-poem">${poem.replace(/\n/g,"<br>")}</div>
-        <div class="card-date">${date}</div>
-        <div class="card-stats">
-          <div class="card-stat"><span>▶</span>${plays}</div>
-        </div>
-      </div>
-    `;
+    card.innerHTML =
+      '<div class="card-thumb">' +
+        (ytId
+          ? '<img src="https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg" alt="" loading="lazy">'
+          : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(160,128,96,.35);font-size:.65rem;letter-spacing:.2em;">no image</div>') +
+        (filter ? '<div class="card-filter-badge">' + filter + '</div>' : "") +
+      '</div>' +
+      '<div class="card-body">' +
+        '<div class="card-poem"></div>' +
+        '<div class="card-date">' + date + '</div>' +
+      '</div>';
+    card.querySelector(".card-poem").textContent = poem;
 
     card.addEventListener("click", () => openModal(post));
     grid.appendChild(card);
-
-    requestAnimationFrame(() => {
-      revealObserver.observe(card);
-    });
+    revealObserver.observe(card);
   });
 
   document.getElementById("loadMoreBtn").style.display =
     to >= posts.length ? "none" : "inline-block";
+  document.getElementById("archiveEmpty").style.display =
+    posts.length ? "none" : "block";
 }
 
 function loadMore() {
@@ -746,22 +752,20 @@ function openModal(post) {
   const modal = document.getElementById("modal");
   const ytId  = post["YouTube投稿ID"] || "";
 
-  if (ytId) {
-    document.getElementById("modalVideo").src = "";
-    document.getElementById("modalVideo").parentElement.innerHTML =
-      `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1&mute=0&playsinline=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;height:100%;"></iframe>`;
-  }
+  document.getElementById("modalVideo").innerHTML = ytId
+    ? '<iframe src="https://www.youtube.com/embed/' + ytId + '?autoplay=1&playsinline=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen title="詩の映像"></iframe>'
+    : "";
 
   document.getElementById("modalPoem").textContent = post["詩"] || "";
 
-  const totalPlays = (parseInt(post["X再生数"]||0)+parseInt(post["YouTube再生数"]||0)+parseInt(post["Instagram再生数"]||0)).toLocaleString();
-  document.getElementById("modalInfo").innerHTML = `
-    ${post["投稿日時"]?.slice(0,10) || ""}<br>
-    フィルター：${post["フィルター"] || ""}<br>
-    BGM：${post["BGMタイトル"] || "—"}<br>
-    総再生数：${totalPlays}<br><br>
-    ${post["YouTube投稿ID"] ? `<a href="https://youtube.com/shorts/${post["YouTube投稿ID"]}" target="_blank" style="color:var(--amber);text-decoration:none;font-size:.65rem;letter-spacing:.2em;">YouTubeで見る →</a>` : ""}
-  `;
+  const date = (post["投稿日時"] || "").slice(0,10);
+  const filter = post["フィルター"] || "";
+  const bgm = post["BGMタイトル"] || "";
+  document.getElementById("modalInfo").innerHTML =
+    date +
+    (filter ? "<br>フィルター：" + filter : "") +
+    (bgm ? "<br>BGM：" + bgm : "") +
+    (ytId ? '<br><br><a href="https://youtube.com/shorts/' + ytId + '" target="_blank" rel="noopener">YouTubeで見る →</a>' : "");
 
   modal.classList.add("open");
   document.body.style.overflow = "hidden";
@@ -770,8 +774,7 @@ function openModal(post) {
 function closeModal() {
   document.getElementById("modal").classList.remove("open");
   document.body.style.overflow = "";
-  const iframe = document.querySelector("#modal iframe");
-  if (iframe) iframe.src = iframe.src;
+  document.getElementById("modalVideo").innerHTML = "";
 }
 
 document.getElementById("modal").addEventListener("click", e => {
@@ -784,7 +787,7 @@ document.addEventListener("keydown", e => {
 // ===== 初期化 =====
 (async () => {
   allPosts = await fetchHistory();
-  renderBest(allPosts);
+  renderLatest(allPosts);
   renderArchive(allPosts, 0, displayCount);
 })();
 </script>
